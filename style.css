@@ -204,12 +204,15 @@ body {
   padding: 20px;
   z-index: 30;
   opacity: 1;
-  transition: opacity 0.2s ease;
+  visibility: visible;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
-.overlay.hidden {
+.overlay.hidden,
+.overlay.hidden * {
   opacity: 0;
-  pointer-events: none;
+  visibility: hidden;
+  pointer-events: none !important;
 }
 
 .modal-card {
