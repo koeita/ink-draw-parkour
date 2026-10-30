@@ -210,13 +210,8 @@
       }),
     };
 
-    // Left & Right walls (so the ball cannot escape from screen edges)
+    // Left wall so the ball never falls off the left side
     const leftWall = Bodies.rectangle(-10, height / 2, 20, height * 2, {
-      isStatic: true,
-      restitution: 0.6,
-      label: 'wall',
-    });
-    const rightWall = Bodies.rectangle(width + 10, height / 2, 20, height * 2, {
       isStatic: true,
       restitution: 0.6,
       label: 'wall',
@@ -227,7 +222,6 @@
       goalZone.body,
       spikeZone.body,
       leftWall,
-      rightWall,
     ]);
   }
 
@@ -267,7 +261,7 @@
         }
 
         if (labels.includes('player-ball') && labels.includes('spike-sensor')) {
-          triggerGameOver();
+          triggerGameOver('谷底のトゲに落下しました。足場を描いて再挑戦してください。');
           return;
         }
 
@@ -311,7 +305,7 @@
   /**
    * Trigger Game Over
    */
-  function triggerGameOver() {
+  function triggerGameOver(reasonMessage) {
     if (gameState !== 'PLAYING') return;
     gameState = 'GAMEOVER';
     isDrawing = false;
@@ -322,7 +316,7 @@
     overlayKicker.textContent = 'SYSTEM FAILURE';
     overlayKicker.classList.add('danger');
     overlayTitle.textContent = 'GAME OVER';
-    overlayMessage.textContent = '谷底のトゲに落下しました。足場を描いて再挑戦してください。';
+    overlayMessage.textContent = reasonMessage || '谷底のトゲに落下しました。足場を描いて再挑戦してください。';
     statTime.textContent = `${elapsedSeconds.toFixed(2)}s`;
     statInk.textContent = `${Math.round(totalInkUsed)}px`;
     showOverlay();
@@ -498,9 +492,11 @@
           });
         }
 
-        // Out-of-bounds bottom check
+        // Out-of-bounds bottom or right pass check (must touch goal directly)
         if (playerBall.position.y > height + 40) {
-          triggerGameOver();
+          triggerGameOver('谷底のトゲに落下しました。足場を描いて再挑戦してください。');
+        } else if (playerBall.position.x > width + PLAYER_CONFIG.radius + 10) {
+          triggerGameOver('ゴール枠を通過できずにコース外へ落下しました。');
         }
 
         // Record ball trail
