@@ -120,6 +120,24 @@
         </div>
       </div>
     </div>
+
+    <!-- 画面回転（横向きプレイ推奨・要求）オーバーレイ -->
+    <div id="orientation-blocker" class="orientation-blocker" aria-hidden="true">
+      <div class="orientation-card">
+        <div class="orientation-icon-wrapper">
+          <svg class="orientation-svg" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <!-- Mobile device frame -->
+            <rect class="phone-frame" x="20" y="10" width="24" height="44" rx="4"></rect>
+            <line x1="29" y1="16" x2="35" y2="16"></line>
+            <circle cx="32" cy="48" r="1.5" fill="currentColor"></circle>
+            <!-- Rotate curved arrow -->
+            <path class="rotate-arrow" d="M12 28 C 12 18, 22 8, 36 8 M 36 4 L 40 8 L 36 12"></path>
+          </svg>
+        </div>
+        <h2 class="orientation-title">画面を横向きにしてください</h2>
+        <p class="orientation-desc">本ゲームは横スクロール・パルクールアクションのため、端末を横向き（ランドスケープ）にしてお楽しみください。</p>
+      </div>
+    </div>
   </div>
 
   <!-- Matter.js CDN -->
