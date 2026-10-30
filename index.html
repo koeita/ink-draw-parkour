@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>INK DRAW PARKOUR</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="game-canvas"></canvas>
+
+    <!-- HUD: Ink Gauge & Status -->
+    <header class="hud" aria-label="Game HUD">
+      <div class="hud-top">
+        <div class="brand">
+          <span class="brand-mark"></span>
+          <span class="brand-title">INK DRAW PARKOUR</span>
+        </div>
+        <div class="ink-panel">
+          <div class="ink-header">
+            <span class="ink-label">INK RESERVE</span>
+            <span id="ink-value" class="ink-value">100%</span>
+          </div>
+          <div class="ink-bar-track">
+            <div id="ink-bar-fill" class="ink-bar-fill"></div>
+          </div>
+        </div>
+        <button id="quick-reset-btn" class="ghost-btn" type="button">RESET</button>
+      </div>
+      <p class="hud-hint">DRAG OR SWIPE TO DRAW INK PLATFORMS — LINES FADE IN 3.5s</p>
+    </header>
+
+    <!-- Overlay for Stage Clear / Game Over -->
+    <div id="overlay" class="overlay hidden" role="dialog" aria-modal="true">
+      <div class="modal-card">
+        <p id="overlay-kicker" class="modal-kicker">STATUS</p>
+        <h1 id="overlay-title" class="modal-title">STAGE CLEAR</h1>
+        <p id="overlay-message" class="modal-message">Goal reached.</p>
+        <div class="modal-stats">
+          <div class="stat-item">
+            <span class="stat-label">TIME</span>
+            <span id="stat-time" class="stat-value">0.00s</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">INK USED</span>
+            <span id="stat-ink" class="stat-value">0px</span>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button id="retry-btn" class="primary-btn" type="button">RETRY</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Matter.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
