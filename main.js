@@ -581,8 +581,14 @@
   function triggerStageClear() {
     if (gameState !== 'PLAYING') return;
     gameState = 'CLEARED';
+    if (activePointerId !== null && canvas.releasePointerCapture) {
+      try {
+        canvas.releasePointerCapture(activePointerId);
+      } catch (_) {}
+    }
     isDrawing = false;
     activeStroke = null;
+    activePointerId = null;
 
     SoundFX.playClear();
     triggerScreenShake(6, 220);
@@ -608,8 +614,14 @@
   function triggerGameOver(reasonMessage) {
     if (gameState !== 'PLAYING') return;
     gameState = 'GAMEOVER';
+    if (activePointerId !== null && canvas.releasePointerCapture) {
+      try {
+        canvas.releasePointerCapture(activePointerId);
+      } catch (_) {}
+    }
     isDrawing = false;
     activeStroke = null;
+    activePointerId = null;
 
     SoundFX.playGameOver();
     triggerScreenShake(9, 280);
@@ -760,6 +772,11 @@
 
   function stopDrawing(event) {
     if (event && activePointerId !== null && event.pointerId !== activePointerId) return;
+    if (activePointerId !== null && canvas.releasePointerCapture) {
+      try {
+        canvas.releasePointerCapture(activePointerId);
+      } catch (_) {}
+    }
     isDrawing = false;
     activeStroke = null;
     activePointerId = null;
@@ -1189,9 +1206,13 @@
     initGame();
   });
 
-  retryBtn.addEventListener('click', () => {
+  retryBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
     SoundFX.playUiClick();
     initGame();
+  });
+  retryBtn.addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
   });
 
   // Settings Modal Controls
