@@ -277,11 +277,18 @@ body {
   margin-bottom: 24px;
 }
 
+.menu-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
 .menu-kicker-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 8px;
 }
 
 .menu-kicker-row .modal-kicker {
@@ -309,9 +316,8 @@ body {
 
 .stage-section {
   border-top: 1px solid var(--border-subtle);
-  border-bottom: 1px solid var(--border-subtle);
-  padding: 18px 0;
-  margin-bottom: 22px;
+  padding-top: 18px;
+  margin-bottom: 8px;
 }
 
 .stage-section-header {

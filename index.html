@@ -45,12 +45,15 @@
     <div id="main-menu-overlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="menu-title">
       <div class="modal-card menu-card">
         <div class="menu-header">
-          <div class="menu-kicker-row">
-            <span class="brand-mark"></span>
-            <p class="modal-kicker">2D物理インクアクション</p>
+          <div class="menu-header-top">
+            <div class="menu-kicker-row">
+              <span class="brand-mark"></span>
+              <p class="modal-kicker">2D物理インクアクション</p>
+            </div>
+            <button id="menu-settings-btn" class="ghost-btn" type="button">設定</button>
           </div>
           <h1 id="menu-title" class="menu-title">インク・ドロー・パルクール</h1>
-          <p class="menu-subtitle">マウスや指で描いた線がリアルタイムで足場になるパルクールゲーム。ステージを選択してスタートしてください。</p>
+          <p class="menu-subtitle">マウスや指で描いた線がリアルタイムで足場になるパルクールゲーム。遊びたいステージを選択してください。</p>
         </div>
 
         <div class="stage-section">
@@ -61,11 +64,6 @@
           <div id="stage-grid" class="stage-grid">
             <!-- main.js で動的に生成 -->
           </div>
-        </div>
-
-        <div class="menu-footer">
-          <button id="menu-play-btn" class="primary-btn" type="button">ステージ 01 を開始</button>
-          <button id="menu-settings-btn" class="ghost-btn menu-settings-btn" type="button">設定</button>
         </div>
       </div>
     </div>

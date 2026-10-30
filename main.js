@@ -35,7 +35,6 @@
   const mainMenuOverlay = document.getElementById('main-menu-overlay');
   const stageGrid = document.getElementById('stage-grid');
   const stageProgressText = document.getElementById('stage-progress-text');
-  const menuPlayBtn = document.getElementById('menu-play-btn');
   const menuSettingsBtn = document.getElementById('menu-settings-btn');
 
   // Stage Clear / Game Over Modal Elements
@@ -510,13 +509,6 @@
     });
 
     stageProgressText.textContent = `${clearedCount} / ${STAGES.length} ステージクリア`;
-
-    const targetStage = STAGES[foundUncleared ? recommendedIndex : currentStageIndex];
-    menuPlayBtn.textContent = `${targetStage.code} を開始`;
-    menuPlayBtn.onclick = () => {
-      SoundFX.playUiClick();
-      startStage(foundUncleared ? recommendedIndex : currentStageIndex);
-    };
   }
 
   function showMainMenu() {
