@@ -27,8 +27,6 @@
   const hudHint = document.getElementById('hud-hint');
   const inkBarFill = document.getElementById('ink-bar-fill');
   const inkValueText = document.getElementById('ink-value');
-  const quickResetBtn = document.getElementById('quick-reset-btn');
-  const hudMenuBtn = document.getElementById('hud-menu-btn');
   const settingsBtn = document.getElementById('settings-btn');
 
   // Main Menu Elements
@@ -52,6 +50,8 @@
   const settingsOverlay = document.getElementById('settings-overlay');
   const soundToggleBtn = document.getElementById('sound-toggle-btn');
   const shakeToggleBtn = document.getElementById('shake-toggle-btn');
+  const settingsRestartBtn = document.getElementById('settings-restart-btn');
+  const settingsMenuBtn = document.getElementById('settings-menu-btn');
   const settingsCloseBtn = document.getElementById('settings-close-btn');
 
   // Constants & Tuning
@@ -466,6 +466,24 @@
   let screenShake = { intensity: 0, durationMs: 0, elapsedMs: 0 };
   let lastBoostEffectTime = 0;
 
+  // Ambient particles for Main Menu background
+  let menuBackgroundParticles = [];
+  function initMenuBackgroundParticles() {
+    menuBackgroundParticles = [];
+    const count = 38;
+    for (let i = 0; i < count; i++) {
+      menuBackgroundParticles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.45,
+        vy: 0.25 + Math.random() * 0.65, // Gentle downward drift
+        radius: 1.5 + Math.random() * 2.8,
+        alpha: 0.15 + Math.random() * 0.35,
+        color: Math.random() < 0.6 ? COLORS.ink : (Math.random() < 0.5 ? COLORS.goalAccent : '#ffffff'),
+      });
+    }
+  }
+
   /**
    * Populate and Refresh Stage Selection Grid on Main Menu
    */
@@ -516,7 +534,16 @@
     gameHud.classList.add('hud-hidden');
     mainMenuOverlay.classList.remove('hidden');
     renderMainMenu();
-    buildPreviewOrStage(false);
+    initMenuBackgroundParticles();
+    if (engine) {
+      World.clear(engine.world, false);
+      Engine.clear(engine);
+    }
+    staticPlatforms = [];
+    movingPlatforms = [];
+    spikeSegments = [];
+    goalZone = null;
+    playerBall = null;
   }
 
   function startStage(stageIndex) {
@@ -544,6 +571,16 @@
     isSettingsOpen = true;
     stopDrawing();
     pauseStartedAt = performance.now();
+
+    // Toggle restart & menu buttons depending on whether we are in active gameplay
+    if (gameState === 'PLAYING') {
+      settingsRestartBtn.style.display = 'block';
+      settingsMenuBtn.style.display = 'block';
+    } else {
+      settingsRestartBtn.style.display = 'none';
+      settingsMenuBtn.style.display = 'none';
+    }
+
     settingsOverlay.classList.remove('hidden');
     SoundFX.playUiClick();
   }
@@ -1338,6 +1375,14 @@
     }
 
     drawGrid();
+
+    // In Main Menu: show ambient floating particles instead of game stage elements
+    if (gameState === 'MENU') {
+      drawMenuBackground(now);
+      ctx.restore();
+      return;
+    }
+
     drawSpawnPortal(now);
     drawStagePlatforms();
     drawMovingPlatforms(now);
@@ -1348,6 +1393,27 @@
     drawPlayerBall();
     drawParticles();
 
+    ctx.restore();
+  }
+
+  function drawMenuBackground(now) {
+    ctx.save();
+    for (const p of menuBackgroundParticles) {
+      p.y += p.vy;
+      p.x += p.vx;
+      if (p.y > height + 10) {
+        p.y = -10;
+        p.x = Math.random() * width;
+      }
+      if (p.x < -10) p.x = width + 10;
+      if (p.x > width + 10) p.x = -10;
+
+      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.restore();
   }
 
@@ -1641,16 +1707,6 @@
   canvas.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
 
   // HUD & Result Action Buttons
-  quickResetBtn.addEventListener('click', () => {
-    SoundFX.playUiClick();
-    initGame();
-  });
-
-  hudMenuBtn.addEventListener('click', () => {
-    SoundFX.playUiClick();
-    showMainMenu();
-  });
-
   retryBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     initGame();
@@ -1682,6 +1738,18 @@
 
   menuSettingsBtn.addEventListener('click', () => {
     openSettings();
+  });
+
+  settingsRestartBtn.addEventListener('click', () => {
+    closeSettings();
+    SoundFX.playUiClick();
+    initGame();
+  });
+
+  settingsMenuBtn.addEventListener('click', () => {
+    closeSettings();
+    SoundFX.playUiClick();
+    showMainMenu();
   });
 
   settingsCloseBtn.addEventListener('click', () => {
