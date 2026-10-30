@@ -55,12 +55,12 @@ body {
   top: 0;
   left: 0;
   right: 0;
-  padding: 18px 24px;
+  padding: 14px 20px;
   pointer-events: none;
   z-index: 10;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   transition: opacity 0.2s ease;
 }
 
@@ -75,8 +75,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  max-width: 1200px;
+  gap: 12px;
+  max-width: 1100px;
   width: 100%;
   margin: 0 auto;
 }
@@ -84,7 +84,7 @@ body {
 .hud-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .brand {
@@ -131,22 +131,22 @@ body {
 /* Ink Gauge */
 .ink-panel {
   flex: 1;
-  max-width: 420px;
+  max-width: 400px;
   background-color: var(--bg-panel);
   border: 1px solid var(--border-subtle);
-  padding: 10px 14px;
+  padding: 8px 12px;
 }
 
 .ink-header {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
 }
 
 .ink-label {
   font-family: var(--font-display);
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--text-muted);
@@ -155,7 +155,7 @@ body {
 
 .ink-value {
   font-family: var(--font-display);
-  font-size: 0.75rem;
+  font-size: 0.74rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--ink-accent);
@@ -184,7 +184,7 @@ body {
 .hud-hint {
   text-align: center;
   font-family: var(--font-display);
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   letter-spacing: 0.04em;
   color: var(--text-muted);
   opacity: 0.9;
@@ -211,7 +211,7 @@ body {
   background-color: var(--bg-panel);
   color: var(--text-main);
   border: 1px solid var(--border-subtle);
-  padding: 9px 14px;
+  padding: 8px 12px;
   font-size: 0.72rem;
 }
 
@@ -239,7 +239,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 16px;
   z-index: 30;
   opacity: 1;
   visibility: visible;
@@ -262,19 +262,19 @@ body {
   max-width: 440px;
   background-color: #14161c;
   border: 1px solid var(--border-subtle);
-  padding: 32px 28px;
+  padding: 28px 24px;
   text-align: left;
 }
 
 /* Main Menu Card & Stage Grid */
 .menu-card {
-  max-width: 680px;
-  max-height: calc(100dvh - 40px);
+  max-width: 640px;
+  max-height: calc(100dvh - 32px);
   overflow-y: auto;
 }
 
 .menu-header {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .menu-header-top {
@@ -297,7 +297,7 @@ body {
 
 .menu-title {
   font-family: var(--font-display);
-  font-size: 2.1rem;
+  font-size: 1.95rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--text-main);
@@ -307,7 +307,7 @@ body {
 }
 
 .menu-subtitle {
-  font-size: 0.88rem;
+  font-size: 0.86rem;
   line-height: 1.6;
   color: var(--text-muted);
   word-break: normal;
@@ -316,8 +316,8 @@ body {
 
 .stage-section {
   border-top: 1px solid var(--border-subtle);
-  padding-top: 18px;
-  margin-bottom: 8px;
+  padding-top: 16px;
+  margin-bottom: 4px;
 }
 
 .stage-section-header {
@@ -348,7 +348,7 @@ body {
 
 .stage-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
   gap: 10px;
 }
 
@@ -420,21 +420,6 @@ body {
   white-space: nowrap;
 }
 
-.menu-footer {
-  display: flex;
-  gap: 12px;
-}
-
-.menu-footer .primary-btn {
-  flex: 2;
-}
-
-.menu-footer .menu-settings-btn {
-  flex: 1;
-  padding: 14px 16px;
-  font-size: 0.8rem;
-}
-
 .modal-kicker {
   font-family: var(--font-display);
   font-size: 0.72rem;
@@ -450,7 +435,7 @@ body {
 
 .modal-title {
   font-family: var(--font-display);
-  font-size: 1.85rem;
+  font-size: 1.8rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--text-main);
@@ -595,133 +580,58 @@ body {
   color: var(--ink-accent);
 }
 
-/* Mobile Landscape & Small Height Adjustments */
-@media (max-height: 520px) {
-  .modal-card {
-    padding: 16px 20px;
-  }
-
-  .menu-header {
-    margin-bottom: 12px;
-  }
-
-  .menu-title {
-    font-size: 1.5rem;
-    margin-bottom: 4px;
-  }
-
-  .menu-subtitle {
-    font-size: 0.78rem;
-    line-height: 1.4;
-  }
-
-  .stage-section {
-    padding-top: 12px;
-    margin-bottom: 4px;
-  }
-
-  .stage-section-header {
-    margin-bottom: 8px;
-  }
-
-  .stage-card {
-    padding: 8px 10px;
+/* Mobile Portrait & Narrow Screen Adjustments */
+@media (max-width: 640px) {
+  .hud {
+    padding: 10px 12px;
     gap: 4px;
   }
 
-  .stage-card-name {
-    font-size: 0.8rem;
-  }
-
-  .stage-grid {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 8px;
-  }
-
-  .hud {
-    padding: 8px 14px;
+  .brand {
+    display: none;
   }
 
   .ink-panel {
+    max-width: none;
     padding: 6px 10px;
   }
 
   .ghost-btn {
-    padding: 6px 10px;
+    padding: 7px 10px;
+    font-size: 0.66rem;
+    white-space: nowrap;
   }
-}
 
-/* Orientation Blocker (Show only when mobile screen is in portrait orientation) */
-.orientation-blocker {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background-color: #12141a;
-  z-index: 100;
-  align-items: center;
-  justify-content: center;
-  padding: 28px;
-  text-align: center;
-}
-
-@media screen and (orientation: portrait) and (max-width: 1024px) {
-  .orientation-blocker {
-    display: flex;
+  .hud-hint {
+    font-size: 0.62rem;
   }
-}
 
-.orientation-card {
-  max-width: 340px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-}
-
-.orientation-icon-wrapper {
-  width: 76px;
-  height: 76px;
-  border-radius: 50%;
-  background-color: rgba(0, 240, 255, 0.08);
-  border: 1px solid rgba(0, 240, 255, 0.25);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--ink-accent);
-}
-
-.orientation-svg {
-  width: 44px;
-  height: 44px;
-  animation: phoneRotateAnim 2.4s ease-in-out infinite;
-}
-
-@keyframes phoneRotateAnim {
-  0%, 15% {
-    transform: rotate(0deg);
+  .modal-card {
+    padding: 20px 18px;
   }
-  50%, 75% {
-    transform: rotate(-90deg);
-  }
-  90%, 100% {
-    transform: rotate(0deg);
-  }
-}
 
-.orientation-title {
-  font-family: var(--font-display);
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--text-main);
-  letter-spacing: 0.04em;
-  word-break: keep-all;
-  overflow-wrap: break-word;
-}
+  .menu-title {
+    font-size: 1.42rem;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
 
-.orientation-desc {
-  font-size: 0.84rem;
-  line-height: 1.6;
-  color: var(--text-muted);
-  word-break: normal;
-  overflow-wrap: break-word;
+  .menu-subtitle {
+    font-size: 0.8rem;
+  }
+
+  .stage-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .stage-card {
+    padding: 10px 12px;
+  }
+
+  .modal-title {
+    font-size: 1.45rem;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
 }

@@ -1,11 +1,11 @@
 {
   "name": "インク・ドロー・パルクール (Ink Draw Parkour)",
   "short_name": "インクパルクール",
-  "description": "マウスや指で描いた線が足場になる、インク・ドロー・パルクールアクションゲーム",
+  "description": "マウスや指で描いた線で落下するボールをゴールへ誘導する、インク・ドロー・アクションゲーム",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "orientation": "landscape",
+  "orientation": "portrait",
   "background_color": "#1a1c23",
   "theme_color": "#1a1c23"
 }

@@ -20,7 +20,7 @@
           <span class="brand-mark"></span>
           <div class="brand-text">
             <span class="brand-title">インク・パルクール</span>
-            <span id="hud-stage-label" class="hud-stage-label">ステージ 01 — 最初の橋</span>
+            <span id="hud-stage-label" class="hud-stage-label">STAGE 01 — 最初の誘導</span>
           </div>
         </div>
         <div class="ink-panel">
@@ -38,7 +38,7 @@
           <button id="settings-btn" class="ghost-btn" type="button">設定</button>
         </div>
       </div>
-      <p id="hud-hint" class="hud-hint">ドラッグやスワイプでインクの足場を描いてください — 線は3.5秒後に消滅します</p>
+      <p id="hud-hint" class="hud-hint">スワイプやドラッグで線を描き、落下するボールを下部のゴールへ誘導してください</p>
     </header>
 
     <!-- メインメニュー画面 -->
@@ -48,18 +48,18 @@
           <div class="menu-header-top">
             <div class="menu-kicker-row">
               <span class="brand-mark"></span>
-              <p class="modal-kicker">2D物理インクアクション</p>
+              <p class="modal-kicker">2D物理インク誘導アクション</p>
             </div>
             <button id="menu-settings-btn" class="ghost-btn" type="button">設定</button>
           </div>
           <h1 id="menu-title" class="menu-title">インク・ドロー・パルクール</h1>
-          <p class="menu-subtitle">マウスや指で描いた線がリアルタイムで足場になるパルクールゲーム。遊びたいステージを選択してください。</p>
+          <p class="menu-subtitle">上から落ちていくボールを、指やマウスで描いたインクの線でゴールへ導くパルクールゲーム。ステージを選択してください。</p>
         </div>
 
         <div class="stage-section">
           <div class="stage-section-header">
             <span class="stage-section-title">ステージ選択</span>
-            <span id="stage-progress-text" class="stage-progress-text">0 / 5 クリア済み</span>
+            <span id="stage-progress-text" class="stage-progress-text">0 / 5 ステージクリア</span>
           </div>
           <div id="stage-grid" class="stage-grid">
             <!-- main.js で動的に生成 -->
@@ -77,7 +77,7 @@
         <div class="modal-stats">
           <div class="stat-item">
             <span class="stat-label">クリアタイム</span>
-            <span id="stat-time" class="stat-value">0.00s</span>
+            <span id="stat-time" class="stat-value">0.00秒</span>
           </div>
           <div class="stat-item">
             <span class="stat-label">インク使用量</span>
@@ -110,7 +110,7 @@
           <div class="setting-row">
             <div class="setting-info">
               <span class="setting-name">画面の揺れ (振動演出)</span>
-              <span class="setting-desc">着地やジャンプ時のカメラ振動</span>
+              <span class="setting-desc">着地やバウンド時のカメラ振動</span>
             </div>
             <button id="shake-toggle-btn" class="toggle-btn active" type="button" aria-pressed="true">ON</button>
           </div>
@@ -118,24 +118,6 @@
         <div class="modal-actions">
           <button id="settings-close-btn" class="primary-btn" type="button">閉じる</button>
         </div>
-      </div>
-    </div>
-
-    <!-- 画面回転（横向きプレイ推奨・要求）オーバーレイ -->
-    <div id="orientation-blocker" class="orientation-blocker" aria-hidden="true">
-      <div class="orientation-card">
-        <div class="orientation-icon-wrapper">
-          <svg class="orientation-svg" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <!-- Mobile device frame -->
-            <rect class="phone-frame" x="20" y="10" width="24" height="44" rx="4"></rect>
-            <line x1="29" y1="16" x2="35" y2="16"></line>
-            <circle cx="32" cy="48" r="1.5" fill="currentColor"></circle>
-            <!-- Rotate curved arrow -->
-            <path class="rotate-arrow" d="M12 28 C 12 18, 22 8, 36 8 M 36 4 L 40 8 L 36 12"></path>
-          </svg>
-        </div>
-        <h2 class="orientation-title">画面を横向きにしてください</h2>
-        <p class="orientation-desc">本ゲームは横スクロール・パルクールアクションのため、端末を横向き（ランドスケープ）にしてお楽しみください。</p>
       </div>
     </div>
   </div>

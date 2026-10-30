@@ -72,67 +72,68 @@
   const INK_CONFIG = {
     maxInk: 900,
     costPerPixel: 1.0,
-    regenPerSecond: 210,
-    minSegmentDist: 10,
+    regenPerSecond: 220,
+    minSegmentDist: 9,
     thickness: 8,
     lifetimeMs: 3500, // 3.5 seconds total lifetime (within 3-4s requirement)
     fadeStartMs: 2300, // Starts fading at 2.3s, fully gone at 3.5s
   };
 
   const PLAYER_CONFIG = {
-    radius: 16,
-    propulsionForce: 0.00052,
-    maxHorizontalSpeed: 7.2,
-    minRollAssistSpeed: 2.6,
+    radius: 14,
+    dropDelayMs: 550, // Brief hold at top portal so player can see & draw immediately
+    maxSpeed: 9.5,
   };
 
   /**
-   * 全5ステージの定義
+   * 全5ステージの定義（縦画面・上から下へ落下するボールを誘導する設計）
    */
   const STAGES = [
     {
       id: 1,
       code: 'STAGE 01',
-      name: '最初の橋',
-      hint: 'ステージ 01: 空隙にインクで橋を描き、右端のゴール枠へ導いてください',
+      name: '最初の誘導',
+      hint: 'ステージ 01: 斜めの線を描いて、上から落ちるボールを右下のゴールへ誘導してください',
       maxInk: 950,
-      startYRatio: 0.52,
-      startWidthRatio: 0.16,
-      goalYRatio: 0.48,
-      goalWidthRatio: 0.12,
+      startXRatio: 0.26,
+      startYRatio: 0.15,
+      goalXRatio: 0.74,
+      goalWidthRatio: 0.22,
       obstacles: [
-        { xRatio: 0.5, yRatio: 0.56, wRatio: 0.1, h: 16 },
+        { xRatio: 0.48, yRatio: 0.48, wRatio: 0.34, h: 16 },
       ],
       moving: [],
     },
     {
       id: 2,
       code: 'STAGE 02',
-      name: 'ハイ・ヴォルト',
-      hint: 'ステージ 02: 右上がりの坂道を描いて加速し、高所のゴールへ大ジャンプしてください',
+      name: 'ジグザグ降下',
+      hint: 'ステージ 02: 互い違いの棚をかわし、左→右へとジグザグに誘導してください',
       maxInk: 950,
-      startYRatio: 0.68,
-      startWidthRatio: 0.16,
-      goalYRatio: 0.28,
-      goalWidthRatio: 0.12,
+      startXRatio: 0.76,
+      startYRatio: 0.15,
+      goalXRatio: 0.72,
+      goalWidthRatio: 0.22,
       obstacles: [
-        { xRatio: 0.44, yRatio: 0.64, wRatio: 0.11, h: 16 },
+        { xRatio: 0.66, yRatio: 0.37, wRatio: 0.46, h: 16 },
+        { xRatio: 0.34, yRatio: 0.62, wRatio: 0.46, h: 16 },
       ],
       moving: [],
     },
     {
       id: 3,
       code: 'STAGE 03',
-      name: '中央の障壁',
-      hint: 'ステージ 03: 中央にそびえる巨大な壁をジャンプ台インクで飛び越えてください',
-      maxInk: 900,
-      startYRatio: 0.62,
-      startWidthRatio: 0.15,
-      goalYRatio: 0.52,
-      goalWidthRatio: 0.12,
+      name: '中央の要塞',
+      hint: 'ステージ 03: 中央のブロックを外側へ迂回させ、下部のゴールへ戻してください',
+      maxInk: 920,
+      startXRatio: 0.5,
+      startYRatio: 0.15,
+      goalXRatio: 0.5,
+      goalWidthRatio: 0.22,
       obstacles: [
-        // 中央の垂直タワー
-        { xRatio: 0.5, yRatio: 0.49, w: 22, hRatio: 0.25 },
+        { xRatio: 0.5, yRatio: 0.38, wRatio: 0.44, h: 18 },
+        { xRatio: 0.2, yRatio: 0.64, wRatio: 0.26, h: 16 },
+        { xRatio: 0.8, yRatio: 0.64, wRatio: 0.26, h: 16 },
       ],
       moving: [],
     },
@@ -140,34 +141,34 @@
       id: 4,
       code: 'STAGE 04',
       name: '動くゲート',
-      hint: 'ステージ 04: 上下に動く可動リフトと障壁のタイミングを見極めてください',
-      maxInk: 900,
-      startYRatio: 0.55,
-      startWidthRatio: 0.14,
-      goalYRatio: 0.42,
-      goalWidthRatio: 0.11,
+      hint: 'ステージ 04: 左右にスライドする可動ゲートの隙間へボールを誘導してください',
+      maxInk: 920,
+      startXRatio: 0.28,
+      startYRatio: 0.15,
+      goalXRatio: 0.72,
+      goalWidthRatio: 0.21,
       obstacles: [],
       moving: [
         {
-          xRatio: 0.38,
-          yRatio: 0.56,
-          wRatio: 0.09,
+          xRatio: 0.5,
+          yRatio: 0.38,
+          wRatio: 0.34,
           h: 16,
-          ampX: 0,
-          ampYRatio: 0.16,
+          ampXRatio: 0.24,
+          ampY: 0,
           speed: 0.0024,
           phase: 0,
           isHazard: false,
         },
         {
-          xRatio: 0.66,
-          yRatio: 0.46,
-          w: 20,
-          hRatio: 0.18,
-          ampX: 0,
-          ampYRatio: 0.17,
-          speed: 0.003,
-          phase: 2.1,
+          xRatio: 0.5,
+          yRatio: 0.63,
+          wRatio: 0.34,
+          h: 16,
+          ampXRatio: 0.24,
+          ampY: 0,
+          speed: 0.0028,
+          phase: 2.2,
           isHazard: false,
         },
       ],
@@ -176,26 +177,26 @@
       id: 5,
       code: 'STAGE 05',
       name: '深淵の試練',
-      hint: 'ステージ 05: 赤いレーザー障壁を避けながらゴールへ到達する最終試練',
-      maxInk: 820,
-      startYRatio: 0.64,
-      startWidthRatio: 0.13,
-      goalYRatio: 0.32,
-      goalWidthRatio: 0.11,
+      hint: 'ステージ 05: 赤いレーザー障壁を避けながら左下のゴールへ導く最終試練',
+      maxInk: 860,
+      startXRatio: 0.5,
+      startYRatio: 0.15,
+      goalXRatio: 0.26,
+      goalWidthRatio: 0.2,
       obstacles: [
-        { xRatio: 0.33, yRatio: 0.62, wRatio: 0.07, h: 16 },
-        { xRatio: 0.68, yRatio: 0.48, wRatio: 0.07, h: 16 },
+        { xRatio: 0.28, yRatio: 0.35, wRatio: 0.26, h: 16 },
+        { xRatio: 0.72, yRatio: 0.66, wRatio: 0.28, h: 16 },
       ],
       moving: [
         {
-          xRatio: 0.51,
-          yRatio: 0.48,
-          w: 18,
-          hRatio: 0.16,
-          ampX: 0,
-          ampYRatio: 0.18,
-          speed: 0.0032,
-          phase: 0.8,
+          xRatio: 0.5,
+          yRatio: 0.5,
+          wRatio: 0.3,
+          h: 16,
+          ampXRatio: 0.24,
+          ampY: 0,
+          speed: 0.0031,
+          phase: 0.7,
           isHazard: true,
         },
       ],
@@ -319,7 +320,7 @@
         const gain = ctxAudio.createGain();
 
         const clampedSpeed = Math.min(12, Math.max(1.5, impactSpeed));
-        const startFreq = isInk ? 210 + clampedSpeed * 18 : 130 + clampedSpeed * 12;
+        const startFreq = isInk ? 220 + clampedSpeed * 18 : 140 + clampedSpeed * 12;
 
         osc.type = isInk ? 'triangle' : 'sine';
         osc.frequency.setValueAtTime(startFreq, now);
@@ -346,16 +347,16 @@
         const gain = ctxAudio.createGain();
 
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(280, now);
-        osc.frequency.exponentialRampToValueAtTime(740, now + 0.14);
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(660, now + 0.12);
 
-        gain.gain.setValueAtTime(0.11, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        gain.gain.setValueAtTime(0.09, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
 
         osc.connect(gain);
         gain.connect(ctxAudio.destination);
         osc.start(now);
-        osc.stop(now + 0.16);
+        osc.stop(now + 0.14);
       } catch (_) {}
     }
 
@@ -435,10 +436,12 @@
 
   let currentStageIndex = 0;
   let playerBall = null;
+  let isBallReleased = false;
+  let spawnPortal = { x: 0, y: 0 };
   let staticPlatforms = [];
   let movingPlatforms = [];
   let goalZone = null;
-  let spikeZone = null;
+  let spikeSegments = [];
 
   // Ink Strokes: array of { points: [{x, y, createdAt}], segments: [{body, p1, p2, createdAt}] }
   let strokes = [];
@@ -469,17 +472,12 @@
   function renderMainMenu() {
     stageGrid.innerHTML = '';
     let clearedCount = 0;
-    let recommendedIndex = 0;
-    let foundUncleared = false;
 
     STAGES.forEach((stage, index) => {
       const prog = stageProgress[stage.id];
       const isCleared = Boolean(prog && prog.cleared);
       if (isCleared) {
         clearedCount++;
-      } else if (!foundUncleared) {
-        recommendedIndex = index;
-        foundUncleared = true;
       }
 
       const card = document.createElement('button');
@@ -611,7 +609,8 @@
 
     engine = Engine.create();
     world = engine.world;
-    engine.gravity.y = 0.82;
+    // Gentle vertical gravity suited for top-to-bottom ink guidance
+    engine.gravity.y = 0.45;
 
     strokes = [];
     activeStroke = null;
@@ -630,6 +629,7 @@
     pausedAccumulatedMs = 0;
     pauseStartedAt = isSettingsOpen ? performance.now() : 0;
     elapsedSeconds = 0;
+    isBallReleased = false;
 
     hudStageLabel.textContent = `${stage.code} — ${stage.name}`;
     hudHint.textContent = stage.hint;
@@ -654,50 +654,40 @@
   }
 
   /**
-   * Create Stage Geometry from Stage Definition
+   * Create Vertical Stage Geometry (Top Spawn Portal, Mid Obstacles, Bottom Goal & Spikes)
    */
   function buildStageGeometry(stage) {
     staticPlatforms = [];
     movingPlatforms = [];
+    spikeSegments = [];
 
-    const startPlatformWidth = Math.max(130, width * stage.startWidthRatio);
-    const startPlatformY = height * stage.startYRatio;
+    // 1. Top Spawn Portal Coordinates
+    const spawnX = Math.max(44, Math.min(width - 44, width * stage.startXRatio));
+    const spawnY = Math.max(106, height * stage.startYRatio);
+    spawnPortal = { x: spawnX, y: spawnY };
 
-    // 1. Left Starting Platform
-    const startPlatform = Bodies.rectangle(
-      startPlatformWidth / 2,
-      startPlatformY,
-      startPlatformWidth,
-      16,
-      {
-        isStatic: true,
-        friction: 0.01,
-        restitution: 0.2,
-        label: 'stage-platform',
-      }
-    );
-    staticPlatforms.push(startPlatform);
-
-    // 2. Stage Static Obstacles / Pillars
+    // 2. Stage Static Obstacles / Deflectors
     for (const obs of stage.obstacles) {
       const obsW = obs.w ? obs.w : Math.max(76, width * obs.wRatio);
-      const obsH = obs.h ? obs.h : Math.max(80, height * obs.hRatio);
+      const obsH = obs.h ? obs.h : Math.max(16, height * (obs.hRatio || 0.02));
       const obsX = width * obs.xRatio;
       const obsY = height * obs.yRatio;
 
       const body = Bodies.rectangle(obsX, obsY, obsW, obsH, {
         isStatic: true,
-        friction: 0.01,
-        restitution: 0.25,
+        angle: obs.angle || 0,
+        friction: 0.005,
+        restitution: 0.35,
+        chamfer: { radius: 4 },
         label: 'stage-platform',
       });
       staticPlatforms.push(body);
     }
 
-    // 3. Stage Moving Platforms / Dynamic Obstacles
+    // 3. Stage Moving Platforms / Dynamic Gates
     for (const mov of stage.moving) {
-      const movW = mov.w ? mov.w : Math.max(76, width * mov.wRatio);
-      const movH = mov.h ? mov.h : Math.max(70, height * mov.hRatio);
+      const movW = mov.w ? mov.w : Math.max(72, width * mov.wRatio);
+      const movH = mov.h ? mov.h : Math.max(16, height * (mov.hRatio || 0.02));
       const baseX = width * mov.xRatio;
       const baseY = height * mov.yRatio;
       const ampX = mov.ampXRatio ? width * mov.ampXRatio : mov.ampX || 0;
@@ -705,8 +695,9 @@
 
       const body = Bodies.rectangle(baseX, baseY, movW, movH, {
         isStatic: true,
-        friction: 0.01,
-        restitution: 0.3,
+        friction: 0.005,
+        restitution: 0.35,
+        chamfer: { radius: 4 },
         label: mov.isHazard ? 'hazard-block' : 'stage-platform',
       });
 
@@ -722,61 +713,117 @@
       });
     }
 
-    // 4. Right Goal Platform & Sensor at Right Edge
-    const goalPlatformWidth = Math.max(105, width * stage.goalWidthRatio);
-    const goalPlatformX = width - goalPlatformWidth / 2;
-    const goalPlatformY = height * stage.goalYRatio;
+    // 4. Bottom Goal Basket & Sensor
+    const goalWidth = Math.max(92, Math.min(180, width * (stage.goalWidthRatio || 0.22)));
+    const goalX = Math.max(goalWidth / 2 + 20, Math.min(width - goalWidth / 2 - 20, width * stage.goalXRatio));
+    const goalPlatformY = height - 22;
+    const goalSensorHeight = 68;
+    const goalSensorY = goalPlatformY - goalSensorHeight / 2 - 6;
 
-    const goalPlatform = Bodies.rectangle(
-      goalPlatformX,
-      goalPlatformY,
-      goalPlatformWidth,
-      16,
+    // Goal base floor
+    const goalFloor = Bodies.rectangle(goalX, goalPlatformY, goalWidth, 16, {
+      isStatic: true,
+      friction: 0.05,
+      restitution: 0.2,
+      label: 'stage-platform',
+    });
+    // Left and right rim walls of the goal basket so the ball is caught cleanly
+    const rimHeight = 46;
+    const leftRim = Bodies.rectangle(
+      goalX - goalWidth / 2 + 5,
+      goalPlatformY - rimHeight / 2,
+      10,
+      rimHeight,
       {
         isStatic: true,
-        friction: 0.02,
-        restitution: 0.2,
+        friction: 0.01,
+        restitution: 0.3,
         label: 'stage-platform',
       }
     );
-    staticPlatforms.push(goalPlatform);
+    const rightRim = Bodies.rectangle(
+      goalX + goalWidth / 2 - 5,
+      goalPlatformY - rimHeight / 2,
+      10,
+      rimHeight,
+      {
+        isStatic: true,
+        friction: 0.01,
+        restitution: 0.3,
+        label: 'stage-platform',
+      }
+    );
+    staticPlatforms.push(goalFloor, leftRim, rightRim);
 
-    const goalSensorWidth = Math.max(72, goalPlatformWidth * 0.72);
-    const goalSensorHeight = 110;
     goalZone = {
-      x: width - goalSensorWidth / 2 - 12,
-      y: goalPlatformY - goalSensorHeight / 2 - 8,
-      width: goalSensorWidth,
+      x: goalX,
+      y: goalSensorY,
+      width: goalWidth - 16,
       height: goalSensorHeight,
-      body: Bodies.rectangle(
-        width - goalSensorWidth / 2 - 12,
-        goalPlatformY - goalSensorHeight / 2 - 8,
-        goalSensorWidth,
-        goalSensorHeight,
-        {
-          isStatic: true,
-          isSensor: true,
-          label: 'goal-sensor',
-        }
-      ),
-    };
-
-    // 5. Bottom Spike Pit Sensor
-    const spikeHeight = 28;
-    spikeZone = {
-      y: height - spikeHeight,
-      height: spikeHeight,
-      body: Bodies.rectangle(width / 2, height - spikeHeight / 2, width * 2, spikeHeight, {
+      body: Bodies.rectangle(goalX, goalSensorY, goalWidth - 16, goalSensorHeight, {
         isStatic: true,
         isSensor: true,
-        label: 'spike-sensor',
+        label: 'goal-sensor',
       }),
     };
 
-    // Left wall so the ball never falls off the left side
+    // 5. Bottom Spike Pit Segments (Left and Right of the Goal Basket)
+    const spikeHeight = 24;
+    const leftGapWidth = goalX - goalWidth / 2;
+    const rightGapStart = goalX + goalWidth / 2;
+    const rightGapWidth = width - rightGapStart;
+
+    if (leftGapWidth > 12) {
+      const leftSpikeBody = Bodies.rectangle(
+        leftGapWidth / 2,
+        height - spikeHeight / 2,
+        leftGapWidth,
+        spikeHeight,
+        {
+          isStatic: true,
+          isSensor: true,
+          label: 'spike-sensor',
+        }
+      );
+      spikeSegments.push({
+        startX: 0,
+        endX: leftGapWidth,
+        height: spikeHeight,
+        body: leftSpikeBody,
+      });
+    }
+
+    if (rightGapWidth > 12) {
+      const rightSpikeBody = Bodies.rectangle(
+        rightGapStart + rightGapWidth / 2,
+        height - spikeHeight / 2,
+        rightGapWidth,
+        spikeHeight,
+        {
+          isStatic: true,
+          isSensor: true,
+          label: 'spike-sensor',
+        }
+      );
+      spikeSegments.push({
+        startX: rightGapStart,
+        endX: width,
+        height: spikeHeight,
+        body: rightSpikeBody,
+      });
+    }
+
+    // 6. Left & Right Side Walls (keep ball inside the vertical screen shaft)
     const leftWall = Bodies.rectangle(-10, height / 2, 20, height * 2, {
       isStatic: true,
-      restitution: 0.6,
+      restitution: 0.65,
+      friction: 0.001,
+      label: 'wall',
+    });
+    const rightWall = Bodies.rectangle(width + 10, height / 2, 20, height * 2, {
+      isStatic: true,
+      restitution: 0.65,
+      friction: 0.001,
       label: 'wall',
     });
 
@@ -784,33 +831,31 @@
       ...staticPlatforms,
       ...movingPlatforms.map((m) => m.body),
       goalZone.body,
-      spikeZone.body,
+      ...spikeSegments.map((s) => s.body),
       leftWall,
+      rightWall,
     ]);
   }
 
   /**
-   * Spawn Player Ball on the left side
+   * Spawn Player Ball at the Top Drop Portal
    */
-  function spawnPlayer(stage) {
-    const startX = Math.max(52, width * 0.05);
-    const startY = height * stage.startYRatio - 48;
-
-    playerBall = Bodies.circle(startX, startY, PLAYER_CONFIG.radius, {
-      restitution: 0.42,
-      friction: 0.004,
-      frictionAir: 0.002,
+  function spawnPlayer() {
+    playerBall = Bodies.circle(spawnPortal.x, spawnPortal.y, PLAYER_CONFIG.radius, {
+      isStatic: true, // Held briefly at top portal for dropDelayMs
+      restitution: 0.46,
+      friction: 0.001,
+      frictionAir: 0.0015,
       density: 0.002,
       label: 'player-ball',
     });
 
-    // Initial gentle rightward velocity
-    Body.setVelocity(playerBall, { x: 2.8, y: 0 });
+    isBallReleased = false;
     World.add(world, playerBall);
   }
 
   /**
-   * Handle Collisions (Goal, Spikes, Hazard Blocks, Bounce FX, and Jump-Ramp Boost)
+   * Handle Collisions (Goal, Spikes, Hazard Blocks, Bounce FX, and Slope Guidance)
    */
   function bindCollisionEvents() {
     Events.on(engine, 'collisionStart', (event) => {
@@ -825,12 +870,12 @@
         }
 
         if (labels.includes('player-ball') && labels.includes('spike-sensor')) {
-          triggerGameOver('谷底のトゲに落下しました。足場を描いて再挑戦してください。');
+          triggerGameOver('下部のトゲに落下しました。インクの線でゴール枠へ誘導してください。');
           return;
         }
 
         if (labels.includes('player-ball') && labels.includes('hazard-block')) {
-          triggerGameOver('赤いレーザー障壁に接触しました。軌道を工夫して回避してください。');
+          triggerGameOver('赤いレーザー障壁に接触しました。線を描いて軌道をそらしてください。');
           return;
         }
 
@@ -840,42 +885,48 @@
           (labels.includes('stage-platform') || labels.includes('wall'))
         ) {
           const speed = Math.hypot(playerBall.velocity.x, playerBall.velocity.y);
-          if (speed > 2.2) {
+          if (speed > 1.8) {
             SoundFX.playBounce(speed, false);
-            if (speed > 5.0) {
-              triggerScreenShake(Math.min(5, speed * 0.45), 110);
-              spawnRipple(playerBall.position.x, playerBall.position.y, 26, '#8b92a5');
+            if (speed > 4.5) {
+              triggerScreenShake(Math.min(4.5, speed * 0.4), 100);
+              spawnRipple(playerBall.position.x, playerBall.position.y, 24, '#8b92a5');
             }
           }
         }
 
-        // Ink segment contact: give smooth bounce / ramp launch feel + audio-visual feedback
+        // Ink segment contact: smooth slope deflection & bounce feedback
         if (labels.includes('player-ball') && labels.includes('ink-segment')) {
           const inkBody = pair.bodyA.label === 'ink-segment' ? pair.bodyA : pair.bodyB;
           const vel = playerBall.velocity;
           const speed = Math.hypot(vel.x, vel.y);
 
-          // If the ink segment is angled upward in the direction of movement, give a slight parkour launch boost
-          const angle = inkBody.angle;
-          if (vel.x > 1.2 && angle < -0.12 && angle > -1.3) {
-            const boostX = Math.min(vel.x * 1.06 + 0.35, PLAYER_CONFIG.maxHorizontalSpeed);
-            const boostY = Math.min(vel.y, -Math.abs(Math.sin(angle)) * 4.2);
-            Body.setVelocity(playerBall, { x: boostX, y: boostY });
+          // Normalize ink segment angle to [-PI/2, PI/2] to determine downward slope direction
+          let a = inkBody.angle;
+          while (a > Math.PI / 2) a -= Math.PI;
+          while (a < -Math.PI / 2) a += Math.PI;
+
+          // Downward tangent vector along the sloped ink segment
+          if (Math.abs(a) > 0.06) {
+            const dir = a > 0 ? 1 : -1;
+            const tx = Math.cos(Math.abs(a)) * dir;
+            const ty = Math.sin(Math.abs(a));
+            const slideBoost = 1.35;
+
+            Body.setVelocity(playerBall, {
+              x: vel.x * 0.82 + tx * slideBoost,
+              y: vel.y * 0.85 + ty * 0.6,
+            });
 
             const now = performance.now();
-            if (now - lastBoostEffectTime > 140) {
+            if (now - lastBoostEffectTime > 150) {
               lastBoostEffectTime = now;
               SoundFX.playJumpBoost();
-              spawnRipple(playerBall.position.x, playerBall.position.y, 34, COLORS.ink);
-              spawnBurstParticles(playerBall.position.x, playerBall.position.y, COLORS.ink, 6);
-              triggerScreenShake(2.5, 90);
+              spawnRipple(playerBall.position.x, playerBall.position.y, 30, COLORS.ink);
+              spawnBurstParticles(playerBall.position.x, playerBall.position.y, COLORS.ink, 5, 0.7);
             }
-          } else if (speed > 2.0) {
+          } else if (speed > 1.6) {
             SoundFX.playBounce(speed, true);
-            if (speed > 4.2) {
-              spawnRipple(playerBall.position.x, playerBall.position.y, 28, COLORS.ink);
-              triggerScreenShake(Math.min(4.5, speed * 0.4), 95);
-            }
+            spawnRipple(playerBall.position.x, playerBall.position.y, 24, COLORS.ink);
           }
         }
       }
@@ -956,7 +1007,7 @@
     overlayKicker.textContent = `${stage.code} — 失敗`;
     overlayKicker.classList.add('danger');
     overlayTitle.textContent = 'ゲームオーバー';
-    overlayMessage.textContent = reasonMessage || '谷底のトゲに落下しました。足場を描いて再挑戦してください。';
+    overlayMessage.textContent = reasonMessage || '下部のトゲに落下しました。インクの線でゴール枠へ誘導してください。';
     statTime.textContent = `${elapsedSeconds.toFixed(2)}秒`;
     statInk.textContent = `${Math.round(totalInkUsed)}px`;
     nextStageBtn.classList.add('btn-hidden');
@@ -982,7 +1033,7 @@
         x,
         y,
         vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed - 1.2 * speedScale,
+        vy: Math.sin(angle) * speed - 1.0 * speedScale,
         size: (2.5 + Math.random() * 3.5) * Math.min(1.2, speedScale + 0.3),
         color,
         alpha: 1,
@@ -1073,8 +1124,8 @@
       {
         isStatic: true,
         angle,
-        friction: 0.002,
-        restitution: 0.45,
+        friction: 0.001,
+        restitution: 0.42,
         chamfer: { radius: INK_CONFIG.thickness / 2 },
         label: 'ink-segment',
       }
@@ -1118,7 +1169,7 @@
   }
 
   /**
-   * Update Physics, Moving Platforms, Player Propulsion, Ink Regeneration, and Stroke Expiration
+   * Update Physics, Moving Platforms, Ball Drop & Guidance, Ink Regeneration, and Stroke Expiration
    */
   function update(dtMs, now) {
     if (isSettingsOpen) return;
@@ -1141,44 +1192,52 @@
     }
 
     if (gameState === 'PLAYING') {
-      elapsedSeconds = Math.max(0, (now - stageStartTime - pausedAccumulatedMs) / 1000);
+      const activeMs = Math.max(0, now - stageStartTime - pausedAccumulatedMs);
+      elapsedSeconds = activeMs / 1000;
 
-      // 1. Constant slight rightward propulsion force on the player ball
-      if (playerBall) {
-        if (playerBall.velocity.x < PLAYER_CONFIG.maxHorizontalSpeed) {
-          Body.applyForce(playerBall, playerBall.position, {
-            x: PLAYER_CONFIG.propulsionForce,
-            y: 0,
-          });
+      // Release ball from top spawn portal after brief countdown
+      if (playerBall && !isBallReleased && activeMs >= PLAYER_CONFIG.dropDelayMs) {
+        isBallReleased = true;
+        Body.setStatic(playerBall, false);
+        Body.setVelocity(playerBall, { x: 0, y: 1.0 });
+        spawnRipple(spawnPortal.x, spawnPortal.y, 32, COLORS.ink);
+      }
+
+      if (playerBall && isBallReleased) {
+        // Clamp maximum velocity so ball never tunnels through thin ink lines
+        const vx = playerBall.velocity.x;
+        const vy = playerBall.velocity.y;
+        const speed = Math.hypot(vx, vy);
+        if (speed > PLAYER_CONFIG.maxSpeed) {
+          const scale = PLAYER_CONFIG.maxSpeed / speed;
+          Body.setVelocity(playerBall, { x: vx * scale, y: vy * scale });
         }
 
-        // Prevent getting completely stuck horizontally on flat surfaces
-        if (Math.abs(playerBall.velocity.x) < 0.4 && Math.abs(playerBall.velocity.y) < 0.25) {
+        // Prevent getting completely stuck on a flat surface
+        if (Math.abs(vx) < 0.25 && Math.abs(vy) < 0.2) {
+          const dirToGoal = goalZone && goalZone.x >= playerBall.position.x ? 1 : -1;
           Body.setVelocity(playerBall, {
-            x: PLAYER_CONFIG.minRollAssistSpeed,
-            y: playerBall.velocity.y,
+            x: dirToGoal * 1.9,
+            y: -0.6,
           });
         }
 
-        // Out-of-bounds bottom or right pass check (must touch goal directly)
-        if (playerBall.position.y > height + 40) {
-          triggerGameOver('谷底のトゲに落下しました。足場を描いて再挑戦してください。');
-        } else if (playerBall.position.x > width + PLAYER_CONFIG.radius + 10) {
-          triggerGameOver('ゴール枠を通過できずにコース外へ落下しました。');
+        // Out-of-bounds bottom check
+        if (playerBall.position.y > height + 36) {
+          triggerGameOver('コース外へ落下しました。インクの線でゴール枠へ誘導してください。');
         }
 
         // Record ball trail
         ballTrail.push({
           x: playerBall.position.x,
           y: playerBall.position.y,
-          alpha: 0.45,
         });
         if (ballTrail.length > 16) {
           ballTrail.shift();
         }
       }
 
-      // 2. Regenerate ink when not drawing
+      // Regenerate ink when not drawing
       if (!isDrawing && currentInk < maxStageInk) {
         currentInk = Math.min(
           maxStageInk,
@@ -1194,7 +1253,7 @@
       Body.setAngle(playerBall, playerBall.angle + 0.12);
     }
 
-    // 3. Fade out and remove ink segments after 3.5 seconds
+    // Fade out and remove ink segments after 3.5 seconds
     for (let sIdx = strokes.length - 1; sIdx >= 0; sIdx--) {
       const stroke = strokes[sIdx];
 
@@ -1214,19 +1273,19 @@
       }
     }
 
-    // 4. Update burst particles
+    // Update burst particles
     for (let i = particles.length - 1; i >= 0; i--) {
       const p = particles[i];
       p.x += p.vx;
       p.y += p.vy;
-      p.vy += 0.16;
+      p.vy += 0.14;
       p.alpha -= 0.024;
       if (p.alpha <= 0) {
         particles.splice(i, 1);
       }
     }
 
-    // 5. Update expanding vector ripples
+    // Update expanding vector ripples
     for (let i = ripples.length - 1; i >= 0; i--) {
       const r = ripples[i];
       r.radius += (r.maxRadius - r.radius) * 0.18 + 0.9;
@@ -1236,7 +1295,7 @@
       }
     }
 
-    // 6. Update screen shake decay
+    // Update screen shake decay
     if (screenShake.durationMs > 0) {
       screenShake.elapsedMs += dtMs;
       if (screenShake.elapsedMs >= screenShake.durationMs) {
@@ -1279,6 +1338,7 @@
     }
 
     drawGrid();
+    drawSpawnPortal(now);
     drawStagePlatforms();
     drawMovingPlatforms(now);
     drawGoalZone(now);
@@ -1307,6 +1367,33 @@
     ctx.stroke();
   }
 
+  function drawSpawnPortal(now) {
+    const { x, y } = spawnPortal;
+    const pulse = (Math.sin(now * 0.006) + 1) * 0.5;
+
+    ctx.save();
+    ctx.strokeStyle = COLORS.ink;
+    ctx.lineWidth = 1.5;
+    ctx.globalAlpha = 0.45 + pulse * 0.35;
+    ctx.beginPath();
+    ctx.arc(x, y, PLAYER_CONFIG.radius + 7 + pulse * 3, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Downward indicator chevron below spawn portal
+    ctx.beginPath();
+    ctx.moveTo(x - 6, y + PLAYER_CONFIG.radius + 14);
+    ctx.lineTo(x, y + PLAYER_CONFIG.radius + 20);
+    ctx.lineTo(x + 6, y + PLAYER_CONFIG.radius + 14);
+    ctx.stroke();
+
+    ctx.fillStyle = COLORS.ink;
+    ctx.globalAlpha = 0.8;
+    ctx.font = '700 10px "Space Grotesk", "Noto Sans JP", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('DROP', x, y - PLAYER_CONFIG.radius - 12);
+    ctx.restore();
+  }
+
   function drawStagePlatforms() {
     ctx.fillStyle = COLORS.platform;
     ctx.strokeStyle = COLORS.platformStroke;
@@ -1331,7 +1418,7 @@
     ctx.save();
     for (const m of movingPlatforms) {
       // Draw subtle guide track line
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.07)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
       ctx.lineWidth = 1;
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
@@ -1354,7 +1441,6 @@
       ctx.fill();
       ctx.stroke();
 
-      // Center indicator dot
       const pulse = (Math.sin(now * 0.008) + 1) * 0.5;
       ctx.fillStyle = m.isHazard ? COLORS.spikeFill : COLORS.movingStroke;
       ctx.globalAlpha = 0.5 + pulse * 0.5;
@@ -1374,41 +1460,46 @@
     const top = y - gh / 2;
 
     ctx.save();
+    ctx.fillStyle = 'rgba(16, 185, 129, 0.08)';
+    ctx.fillRect(left, top, gw, gh);
+
     ctx.strokeStyle = COLORS.goalAccent;
     ctx.lineWidth = 2;
     ctx.strokeRect(left, top, gw, gh);
 
-    const inset = 6 + pulse * 4;
+    const inset = 5 + pulse * 3;
     ctx.globalAlpha = 0.35 + pulse * 0.25;
     ctx.strokeRect(left + inset, top + inset, gw - inset * 2, gh - inset * 2);
 
-    ctx.globalAlpha = 0.25 + pulse * 0.25;
+    ctx.globalAlpha = 0.3 + pulse * 0.25;
     ctx.beginPath();
-    ctx.arc(x, y, 8 + pulse * 4, 0, Math.PI * 2);
+    ctx.arc(x, y, 7 + pulse * 3, 0, Math.PI * 2);
     ctx.stroke();
 
-    ctx.globalAlpha = 0.9;
+    ctx.globalAlpha = 0.95;
     ctx.fillStyle = COLORS.goalAccent;
     ctx.font = '700 11px "Space Grotesk", "Noto Sans JP", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('GOAL (ゴール)', x, top - 10);
+    ctx.fillText('GOAL (ゴール)', x, top - 8);
     ctx.restore();
   }
 
   function drawSpikePit() {
-    if (!spikeZone) return;
-    const spikeWidth = 22;
-    const spikeHeight = spikeZone.height;
+    if (spikeSegments.length === 0) return;
+    const spikeWidth = 20;
     const baseY = height;
-    const tipY = height - spikeHeight;
 
     ctx.save();
     ctx.fillStyle = COLORS.spikeFill;
     ctx.beginPath();
-    for (let x = 0; x < width + spikeWidth; x += spikeWidth) {
-      ctx.moveTo(x, baseY);
-      ctx.lineTo(x + spikeWidth / 2, tipY);
-      ctx.lineTo(x + spikeWidth, baseY);
+    for (const seg of spikeSegments) {
+      const tipY = height - seg.height;
+      for (let x = seg.startX; x < seg.endX - 4; x += spikeWidth) {
+        const w = Math.min(spikeWidth, seg.endX - x);
+        ctx.moveTo(x, baseY);
+        ctx.lineTo(x + w / 2, tipY);
+        ctx.lineTo(x + w, baseY);
+      }
     }
     ctx.closePath();
     ctx.fill();
@@ -1508,7 +1599,7 @@
 
     ctx.fillStyle = COLORS.ballAccent;
     ctx.beginPath();
-    ctx.arc(r * 0.42, 0, 3.5, 0, Math.PI * 2);
+    ctx.arc(r * 0.42, 0, 3.2, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.restore();
