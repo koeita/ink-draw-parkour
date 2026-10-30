@@ -210,8 +210,13 @@
       }),
     };
 
-    // Left wall so the ball never falls off the left side
+    // Left & Right walls (so the ball cannot escape from screen edges)
     const leftWall = Bodies.rectangle(-10, height / 2, 20, height * 2, {
+      isStatic: true,
+      restitution: 0.6,
+      label: 'wall',
+    });
+    const rightWall = Bodies.rectangle(width + 10, height / 2, 20, height * 2, {
       isStatic: true,
       restitution: 0.6,
       label: 'wall',
@@ -222,6 +227,7 @@
       goalZone.body,
       spikeZone.body,
       leftWall,
+      rightWall,
     ]);
   }
 
@@ -490,14 +496,6 @@
             x: PLAYER_CONFIG.minRollAssistSpeed,
             y: playerBall.velocity.y,
           });
-        }
-
-        // Out-of-bounds right check (if jumping over the goal sensor at high altitude)
-        if (
-          playerBall.position.x >= width - 24 &&
-          playerBall.position.y < spikeZone.y - 20
-        ) {
-          triggerStageClear();
         }
 
         // Out-of-bounds bottom check
