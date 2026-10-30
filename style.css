@@ -8,8 +8,8 @@
   --ink-warning: #ffbe0b;
   --danger-accent: #ff4769;
   --goal-accent: #10b981;
-  --font-display: 'Space Grotesk', 'Inter', sans-serif;
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Space Grotesk', 'Noto Sans JP', 'Inter', sans-serif;
+  --font-sans: 'Noto Sans JP', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 * {

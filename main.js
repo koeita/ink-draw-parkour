@@ -88,14 +88,14 @@
   };
 
   /**
-   * 5 Parkour Stage Definitions
+   * 全5ステージの定義
    */
   const STAGES = [
     {
       id: 1,
       code: 'STAGE 01',
-      name: 'FIRST BRIDGE',
-      hint: 'STAGE 01: 空隙にインクで橋を描き、右端のGOAL枠へ導いてください',
+      name: '最初の橋',
+      hint: 'ステージ 01: 空隙にインクで橋を描き、右端のゴール枠へ導いてください',
       maxInk: 950,
       startYRatio: 0.52,
       startWidthRatio: 0.16,
@@ -109,8 +109,8 @@
     {
       id: 2,
       code: 'STAGE 02',
-      name: 'HIGH VAULT',
-      hint: 'STAGE 02: 右上がりのスロープを描いて加速し、高所のGOALへ跳躍してください',
+      name: 'ハイ・ヴォルト',
+      hint: 'ステージ 02: 右上がりの坂道を描いて加速し、高所のゴールへ大ジャンプしてください',
       maxInk: 950,
       startYRatio: 0.68,
       startWidthRatio: 0.16,
@@ -124,15 +124,15 @@
     {
       id: 3,
       code: 'STAGE 03',
-      name: 'THE MONOLITH',
-      hint: 'STAGE 03: 中央の巨大な障壁をジャンプ台インクで飛び越えてください',
+      name: '中央の障壁',
+      hint: 'ステージ 03: 中央にそびえる巨大な壁をジャンプ台インクで飛び越えてください',
       maxInk: 900,
       startYRatio: 0.62,
       startWidthRatio: 0.15,
       goalYRatio: 0.52,
       goalWidthRatio: 0.12,
       obstacles: [
-        // Central vertical monolith barrier
+        // 中央の垂直タワー
         { xRatio: 0.5, yRatio: 0.49, w: 22, hRatio: 0.25 },
       ],
       moving: [],
@@ -140,8 +140,8 @@
     {
       id: 4,
       code: 'STAGE 04',
-      name: 'SHIFTING GATES',
-      hint: 'STAGE 04: 上下に動く可動リフトと障壁のタイミングを見極めてください',
+      name: '動くゲート',
+      hint: 'ステージ 04: 上下に動く可動リフトと障壁のタイミングを見極めてください',
       maxInk: 900,
       startYRatio: 0.55,
       startWidthRatio: 0.14,
@@ -176,8 +176,8 @@
     {
       id: 5,
       code: 'STAGE 05',
-      name: 'ABYSSAL GAUNTLET',
-      hint: 'STAGE 05: 赤いレーザー障壁を避けながらゴールへ到達する最終試練',
+      name: '深淵の試練',
+      hint: 'ステージ 05: 赤いレーザー障壁を避けながらゴールへ到達する最終試練',
       maxInk: 820,
       startYRatio: 0.64,
       startWidthRatio: 0.13,
@@ -489,8 +489,8 @@
       if (index === currentStageIndex) card.classList.add('active-stage');
       if (isCleared) card.classList.add('cleared');
 
-      const bestText = isCleared ? `BEST ${prog.bestTime.toFixed(2)}s` : 'NOT CLEARED';
-      const badgeText = isCleared ? 'CLEARED' : '';
+      const bestText = isCleared ? `最高記録 ${prog.bestTime.toFixed(2)}秒` : '未クリア';
+      const badgeText = isCleared ? 'クリア済み' : '';
 
       card.innerHTML = `
         <div class="stage-card-top">
@@ -509,10 +509,10 @@
       stageGrid.appendChild(card);
     });
 
-    stageProgressText.textContent = `${clearedCount} / ${STAGES.length} CLEARED`;
+    stageProgressText.textContent = `${clearedCount} / ${STAGES.length} ステージクリア`;
 
     const targetStage = STAGES[foundUncleared ? recommendedIndex : currentStageIndex];
-    menuPlayBtn.textContent = `START ${targetStage.code}`;
+    menuPlayBtn.textContent = `${targetStage.code} を開始`;
     menuPlayBtn.onclick = () => {
       SoundFX.playUiClick();
       startStage(foundUncleared ? recommendedIndex : currentStageIndex);
@@ -918,18 +918,18 @@
     }
 
     const hasNextStage = currentStageIndex < STAGES.length - 1;
-    overlayKicker.textContent = isNewBest ? `${stage.code} — NEW RECORD!` : `${stage.code} CLEARED`;
+    overlayKicker.textContent = isNewBest ? `${stage.code} — 新記録達成！` : `${stage.code} クリア`;
     overlayKicker.classList.remove('danger');
-    overlayTitle.textContent = hasNextStage ? 'STAGE CLEAR' : 'ALL STAGES CLEARED';
+    overlayTitle.textContent = hasNextStage ? 'ステージクリア' : '全ステージ完全制覇！';
     overlayMessage.textContent = hasNextStage
-      ? `${stage.name} を突破しました。次のステージへ進めます。`
-      : '全5ステージを完全制覇しました！お見事です！';
+      ? `「${stage.name}」を突破しました！次のステージへ進めます。`
+      : 'おめでとうございます！全5ステージをすべて制覇しました！';
 
-    statTime.textContent = `${elapsedSeconds.toFixed(2)}s`;
+    statTime.textContent = `${elapsedSeconds.toFixed(2)}秒`;
     statInk.textContent = `${Math.round(totalInkUsed)}px`;
 
     if (hasNextStage) {
-      nextStageBtn.textContent = `NEXT: ${STAGES[currentStageIndex + 1].code}`;
+      nextStageBtn.textContent = `次へ: ${STAGES[currentStageIndex + 1].code}`;
       nextStageBtn.classList.remove('btn-hidden');
     } else {
       nextStageBtn.classList.add('btn-hidden');
@@ -961,11 +961,11 @@
     spawnRipple(impactX, impactY, 64, COLORS.spikeFill);
 
     const stage = STAGES[currentStageIndex];
-    overlayKicker.textContent = `${stage.code} — FAILED`;
+    overlayKicker.textContent = `${stage.code} — 失敗`;
     overlayKicker.classList.add('danger');
-    overlayTitle.textContent = 'GAME OVER';
+    overlayTitle.textContent = 'ゲームオーバー';
     overlayMessage.textContent = reasonMessage || '谷底のトゲに落下しました。足場を描いて再挑戦してください。';
-    statTime.textContent = `${elapsedSeconds.toFixed(2)}s`;
+    statTime.textContent = `${elapsedSeconds.toFixed(2)}秒`;
     statInk.textContent = `${Math.round(totalInkUsed)}px`;
     nextStageBtn.classList.add('btn-hidden');
     showOverlay();
@@ -1397,9 +1397,9 @@
 
     ctx.globalAlpha = 0.9;
     ctx.fillStyle = COLORS.goalAccent;
-    ctx.font = '700 11px "Space Grotesk", sans-serif';
+    ctx.font = '700 11px "Space Grotesk", "Noto Sans JP", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('GOAL', x, top - 10);
+    ctx.fillText('GOAL (ゴール)', x, top - 10);
     ctx.restore();
   }
 
