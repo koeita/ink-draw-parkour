@@ -29,7 +29,10 @@
             <div id="ink-bar-fill" class="ink-bar-fill"></div>
           </div>
         </div>
-        <button id="quick-reset-btn" class="ghost-btn" type="button">RESET</button>
+        <div class="hud-actions">
+          <button id="quick-reset-btn" class="ghost-btn" type="button">RESET</button>
+          <button id="settings-btn" class="ghost-btn" type="button">SETTINGS</button>
+        </div>
       </div>
       <p class="hud-hint">DRAG OR SWIPE TO DRAW INK PLATFORMS — LINES FADE IN 3.5s</p>
     </header>
@@ -52,6 +55,33 @@
         </div>
         <div class="modal-actions">
           <button id="retry-btn" class="primary-btn" type="button">RETRY</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Modal (Contains Sound Button, reusable from Main Menu & HUD) -->
+    <div id="settings-overlay" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <div class="modal-card">
+        <p class="modal-kicker">CONFIGURATION</p>
+        <h2 id="settings-title" class="modal-title">SETTINGS</h2>
+        <div class="settings-list">
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-name">SOUND EFFECTS</span>
+              <span class="setting-desc">Web Audio Synthesizer SE</span>
+            </div>
+            <button id="sound-toggle-btn" class="toggle-btn active" type="button" aria-pressed="true">ON</button>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-name">SCREEN SHAKE</span>
+              <span class="setting-desc">Impact &amp; boost camera vibration</span>
+            </div>
+            <button id="shake-toggle-btn" class="toggle-btn active" type="button" aria-pressed="true">ON</button>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button id="settings-close-btn" class="primary-btn" type="button">CLOSE</button>
         </div>
       </div>
     </div>

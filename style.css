@@ -73,6 +73,12 @@ body {
   margin: 0 auto;
 }
 
+.hud-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -157,7 +163,8 @@ body {
 
 /* Buttons */
 .ghost-btn,
-.primary-btn {
+.primary-btn,
+.toggle-btn {
   pointer-events: auto;
   font-family: var(--font-display);
   font-weight: 700;
@@ -168,10 +175,10 @@ body {
 }
 
 .ghost-btn {
-  background-color: transparent;
+  background-color: var(--bg-panel);
   color: var(--text-main);
   border: 1px solid var(--border-subtle);
-  padding: 9px 16px;
+  padding: 9px 14px;
   font-size: 0.72rem;
 }
 
@@ -181,7 +188,8 @@ body {
 }
 
 .ghost-btn:active,
-.primary-btn:active {
+.primary-btn:active,
+.toggle-btn:active {
   transform: translateY(1px);
 }
 
@@ -272,6 +280,58 @@ body {
   color: var(--text-main);
 }
 
+/* Settings Modal List */
+.settings-list {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border-subtle);
+  margin-top: 14px;
+  margin-bottom: 24px;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.setting-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.setting-name {
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--text-main);
+}
+
+.setting-desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.toggle-btn {
+  min-width: 78px;
+  padding: 9px 14px;
+  font-size: 0.74rem;
+  background-color: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+}
+
+.toggle-btn.active {
+  background-color: rgba(0, 240, 255, 0.12);
+  color: var(--ink-accent);
+  border-color: var(--ink-accent);
+}
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -303,6 +363,11 @@ body {
 
   .ink-panel {
     max-width: none;
+  }
+
+  .ghost-btn {
+    padding: 8px 10px;
+    font-size: 0.66rem;
   }
 
   .hud-hint {

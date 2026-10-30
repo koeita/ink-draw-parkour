@@ -9,6 +9,7 @@
   const inkBarFill = document.getElementById('ink-bar-fill');
   const inkValueText = document.getElementById('ink-value');
   const quickResetBtn = document.getElementById('quick-reset-btn');
+  const settingsBtn = document.getElementById('settings-btn');
   const overlay = document.getElementById('overlay');
   const overlayKicker = document.getElementById('overlay-kicker');
   const overlayTitle = document.getElementById('overlay-title');
@@ -16,6 +17,12 @@
   const statTime = document.getElementById('stat-time');
   const statInk = document.getElementById('stat-ink');
   const retryBtn = document.getElementById('retry-btn');
+
+  // Settings Modal Elements
+  const settingsOverlay = document.getElementById('settings-overlay');
+  const soundToggleBtn = document.getElementById('sound-toggle-btn');
+  const shakeToggleBtn = document.getElementById('shake-toggle-btn');
+  const settingsCloseBtn = document.getElementById('settings-close-btn');
 
   // Constants & Tuning
   const COLORS = {
@@ -48,6 +55,194 @@
     minRollAssistSpeed: 2.6,
   };
 
+  // User Preferences (Persisted in localStorage)
+  const settings = {
+    soundEnabled: localStorage.getItem('ink_parkour_sound') !== 'false',
+    shakeEnabled: localStorage.getItem('ink_parkour_shake') !== 'false',
+  };
+
+  /**
+   * Web Audio API Synthesizer for Minimal Vector Sound Effects
+   */
+  const SoundFX = (() => {
+    let audioCtx = null;
+    let lastBounceSoundTime = 0;
+    let lastDrawSoundTime = 0;
+
+    function ensureContext() {
+      if (!settings.soundEnabled) return null;
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+      }
+      return audioCtx;
+    }
+
+    function playUiClick() {
+      const ctxAudio = ensureContext();
+      if (!ctxAudio) return;
+
+      const now = ctxAudio.currentTime;
+      const osc = ctxAudio.createOscillator();
+      const gain = ctxAudio.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(680, now);
+      osc.frequency.exponentialRampToValueAtTime(920, now + 0.045);
+
+      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+
+      osc.connect(gain);
+      gain.connect(ctxAudio.destination);
+      osc.start(now);
+      osc.stop(now + 0.05);
+    }
+
+    function playDrawSegment(inkRatio) {
+      const ctxAudio = ensureContext();
+      if (!ctxAudio) return;
+
+      const perfNow = performance.now();
+      if (perfNow - lastDrawSoundTime < 28) return;
+      lastDrawSoundTime = perfNow;
+
+      const now = ctxAudio.currentTime;
+      const osc = ctxAudio.createOscillator();
+      const gain = ctxAudio.createGain();
+
+      const baseFreq = 320 + inkRatio * 360 + (Math.random() - 0.5) * 35;
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(baseFreq, now);
+      osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.18, now + 0.04);
+
+      gain.gain.setValueAtTime(0.045, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+
+      osc.connect(gain);
+      gain.connect(ctxAudio.destination);
+      osc.start(now);
+      osc.stop(now + 0.05);
+    }
+
+    function playBounce(impactSpeed, isInk) {
+      const ctxAudio = ensureContext();
+      if (!ctxAudio) return;
+
+      const perfNow = performance.now();
+      if (perfNow - lastBounceSoundTime < 75) return;
+      lastBounceSoundTime = perfNow;
+
+      const now = ctxAudio.currentTime;
+      const osc = ctxAudio.createOscillator();
+      const gain = ctxAudio.createGain();
+
+      const clampedSpeed = Math.min(12, Math.max(1.5, impactSpeed));
+      const startFreq = isInk ? 210 + clampedSpeed * 18 : 130 + clampedSpeed * 12;
+
+      osc.type = isInk ? 'triangle' : 'sine';
+      osc.frequency.setValueAtTime(startFreq, now);
+      osc.frequency.exponentialRampToValueAtTime(58, now + 0.09);
+
+      const volume = Math.min(0.16, 0.03 + (clampedSpeed / 12) * 0.12);
+      gain.gain.setValueAtTime(volume, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.095);
+
+      osc.connect(gain);
+      gain.connect(ctxAudio.destination);
+      osc.start(now);
+      osc.stop(now + 0.1);
+    }
+
+    function playJumpBoost() {
+      const ctxAudio = ensureContext();
+      if (!ctxAudio) return;
+
+      const now = ctxAudio.currentTime;
+      const osc = ctxAudio.createOscillator();
+      const gain = ctxAudio.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(280, now);
+      osc.frequency.exponentialRampToValueAtTime(740, now + 0.14);
+
+      gain.gain.setValueAtTime(0.11, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+      osc.connect(gain);
+      gain.connect(ctxAudio.destination);
+      osc.start(now);
+      osc.stop(now + 0.16);
+    }
+
+    function playClear() {
+      const ctxAudio = ensureContext();
+      if (!ctxAudio) return;
+
+      const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
+      const now = ctxAudio.currentTime;
+
+      notes.forEach((freq, idx) => {
+        const osc = ctxAudio.createOscillator();
+        const gain = ctxAudio.createGain();
+        const startTime = now + idx * 0.075;
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, startTime);
+
+        gain.gain.setValueAtTime(0.001, startTime);
+        gain.gain.linearRampToValueAtTime(0.12, startTime + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.36);
+
+        osc.connect(gain);
+        gain.connect(ctxAudio.destination);
+        osc.start(startTime);
+        osc.stop(startTime + 0.38);
+      });
+    }
+
+    function playGameOver() {
+      const ctxAudio = ensureContext();
+      if (!ctxAudio) return;
+
+      const now = ctxAudio.currentTime;
+      const freqs = [190, 135];
+
+      freqs.forEach((f, idx) => {
+        const osc = ctxAudio.createOscillator();
+        const gain = ctxAudio.createGain();
+        const startTime = now + idx * 0.11;
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(f, startTime);
+        osc.frequency.exponentialRampToValueAtTime(f * 0.48, startTime + 0.26);
+
+        gain.gain.setValueAtTime(0.09, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.28);
+
+        osc.connect(gain);
+        gain.connect(ctxAudio.destination);
+        osc.start(startTime);
+        osc.stop(startTime + 0.29);
+      });
+    }
+
+    return {
+      ensureContext,
+      playUiClick,
+      playDrawSegment,
+      playBounce,
+      playJumpBoost,
+      playClear,
+      playGameOver,
+    };
+  })();
+
   // State
   let engine = null;
   let world = null;
@@ -69,12 +264,75 @@
   let currentInk = INK_CONFIG.maxInk;
   let totalInkUsed = 0;
   let stageStartTime = 0;
+  let pausedAccumulatedMs = 0;
+  let pauseStartedAt = 0;
+  let isSettingsOpen = false;
   let elapsedSeconds = 0;
   let gameState = 'PLAYING'; // 'PLAYING' | 'CLEARED' | 'GAMEOVER'
 
-  // Visual Effects (minimal vector trails & bursts)
+  // Visual Effects (minimal vector trails, ripples, bursts & screen shake)
   let ballTrail = [];
   let particles = [];
+  let ripples = [];
+  let screenShake = { intensity: 0, durationMs: 0, elapsedMs: 0 };
+  let lastBoostEffectTime = 0;
+
+  /**
+   * Sync Settings Modal Buttons with current state
+   */
+  function syncSettingsUI() {
+    soundToggleBtn.textContent = settings.soundEnabled ? 'ON' : 'OFF';
+    soundToggleBtn.classList.toggle('active', settings.soundEnabled);
+    soundToggleBtn.setAttribute('aria-pressed', String(settings.soundEnabled));
+
+    shakeToggleBtn.textContent = settings.shakeEnabled ? 'ON' : 'OFF';
+    shakeToggleBtn.classList.toggle('active', settings.shakeEnabled);
+    shakeToggleBtn.setAttribute('aria-pressed', String(settings.shakeEnabled));
+  }
+
+  function openSettings() {
+    if (isSettingsOpen) return;
+    isSettingsOpen = true;
+    stopDrawing();
+    pauseStartedAt = performance.now();
+    settingsOverlay.classList.remove('hidden');
+    SoundFX.playUiClick();
+  }
+
+  function closeSettings() {
+    if (!isSettingsOpen) return;
+    isSettingsOpen = false;
+    if (pauseStartedAt > 0) {
+      pausedAccumulatedMs += performance.now() - pauseStartedAt;
+      pauseStartedAt = 0;
+    }
+    settingsOverlay.classList.add('hidden');
+    SoundFX.playUiClick();
+  }
+
+  /**
+   * Trigger Camera Screen Shake
+   */
+  function triggerScreenShake(intensity, durationMs) {
+    if (!settings.shakeEnabled) return;
+    screenShake.intensity = Math.max(screenShake.intensity, intensity);
+    screenShake.durationMs = Math.max(screenShake.durationMs - screenShake.elapsedMs, durationMs);
+    screenShake.elapsedMs = 0;
+  }
+
+  /**
+   * Spawn Vector Ripple Ring
+   */
+  function spawnRipple(x, y, maxRadius, color) {
+    ripples.push({
+      x,
+      y,
+      radius: 6,
+      maxRadius,
+      color,
+      alpha: 0.85,
+    });
+  }
 
   /**
    * Resize Canvas to fit full viewport with crisp HiDPI scaling
@@ -110,10 +368,14 @@
     activePointerId = null;
     ballTrail = [];
     particles = [];
+    ripples = [];
+    screenShake = { intensity: 0, durationMs: 0, elapsedMs: 0 };
 
     currentInk = INK_CONFIG.maxInk;
     totalInkUsed = 0;
     stageStartTime = performance.now();
+    pausedAccumulatedMs = 0;
+    pauseStartedAt = isSettingsOpen ? performance.now() : 0;
     elapsedSeconds = 0;
     gameState = 'PLAYING';
     hideOverlay();
@@ -246,7 +508,7 @@
   }
 
   /**
-   * Handle Collisions (Goal, Spikes, and Jump-Ramp Boost on Ink Lines)
+   * Handle Collisions (Goal, Spikes, Bounce FX, and Jump-Ramp Boost on Ink Lines)
    */
   function bindCollisionEvents() {
     Events.on(engine, 'collisionStart', (event) => {
@@ -265,10 +527,26 @@
           return;
         }
 
-        // Ink segment contact: give smooth bounce / ramp launch feel
+        // Bounce on stage platform or wall
+        if (
+          labels.includes('player-ball') &&
+          (labels.includes('stage-platform') || labels.includes('wall'))
+        ) {
+          const speed = Math.hypot(playerBall.velocity.x, playerBall.velocity.y);
+          if (speed > 2.2) {
+            SoundFX.playBounce(speed, false);
+            if (speed > 5.0) {
+              triggerScreenShake(Math.min(5, speed * 0.45), 110);
+              spawnRipple(playerBall.position.x, playerBall.position.y, 26, '#8b92a5');
+            }
+          }
+        }
+
+        // Ink segment contact: give smooth bounce / ramp launch feel + audio-visual feedback
         if (labels.includes('player-ball') && labels.includes('ink-segment')) {
           const inkBody = pair.bodyA.label === 'ink-segment' ? pair.bodyA : pair.bodyB;
           const vel = playerBall.velocity;
+          const speed = Math.hypot(vel.x, vel.y);
 
           // If the ink segment is angled upward in the direction of movement, give a slight parkour launch boost
           const angle = inkBody.angle;
@@ -276,6 +554,21 @@
             const boostX = Math.min(vel.x * 1.06 + 0.35, PLAYER_CONFIG.maxHorizontalSpeed);
             const boostY = Math.min(vel.y, -Math.abs(Math.sin(angle)) * 4.2);
             Body.setVelocity(playerBall, { x: boostX, y: boostY });
+
+            const now = performance.now();
+            if (now - lastBoostEffectTime > 140) {
+              lastBoostEffectTime = now;
+              SoundFX.playJumpBoost();
+              spawnRipple(playerBall.position.x, playerBall.position.y, 34, COLORS.ink);
+              spawnBurstParticles(playerBall.position.x, playerBall.position.y, COLORS.ink, 6);
+              triggerScreenShake(2.5, 90);
+            }
+          } else if (speed > 2.0) {
+            SoundFX.playBounce(speed, true);
+            if (speed > 4.2) {
+              spawnRipple(playerBall.position.x, playerBall.position.y, 28, COLORS.ink);
+              triggerScreenShake(Math.min(4.5, speed * 0.4), 95);
+            }
           }
         }
       }
@@ -291,7 +584,14 @@
     isDrawing = false;
     activeStroke = null;
 
-    spawnBurstParticles(playerBall.position.x, playerBall.position.y, COLORS.goalAccent, 28);
+    SoundFX.playClear();
+    triggerScreenShake(6, 220);
+    spawnBurstParticles(goalZone.x, goalZone.y, COLORS.goalAccent, 32);
+    spawnRipple(goalZone.x, goalZone.y, 85, COLORS.goalAccent);
+    spawnRipple(playerBall.position.x, playerBall.position.y, 50, COLORS.ink);
+
+    // Freeze physics velocity on ball so it gets smoothly attracted into the Goal Portal center
+    Body.setStatic(playerBall, true);
 
     overlayKicker.textContent = 'MISSION ACCOMPLISHED';
     overlayKicker.classList.remove('danger');
@@ -311,7 +611,12 @@
     isDrawing = false;
     activeStroke = null;
 
-    spawnBurstParticles(playerBall.position.x, playerBall.position.y, COLORS.spikeFill, 26);
+    SoundFX.playGameOver();
+    triggerScreenShake(9, 280);
+    const impactX = Math.min(width - 16, Math.max(16, playerBall.position.x));
+    const impactY = Math.min(height - 16, Math.max(16, playerBall.position.y));
+    spawnBurstParticles(impactX, impactY, COLORS.spikeFill, 28);
+    spawnRipple(impactX, impactY, 64, COLORS.spikeFill);
 
     overlayKicker.textContent = 'SYSTEM FAILURE';
     overlayKicker.classList.add('danger');
@@ -331,18 +636,18 @@
   }
 
   /**
-   * Vector Burst Particles for Clear / Game Over Feedback
+   * Vector Burst Particles for Clear / Game Over / Ink Sparks
    */
-  function spawnBurstParticles(x, y, color, count) {
+  function spawnBurstParticles(x, y, color, count, speedScale = 1) {
     for (let i = 0; i < count; i++) {
-      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.3;
-      const speed = 2 + Math.random() * 6;
+      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.4;
+      const speed = (1.8 + Math.random() * 5.2) * speedScale;
       particles.push({
         x,
         y,
         vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed - 1.5,
-        size: 3 + Math.random() * 4,
+        vy: Math.sin(angle) * speed - 1.2 * speedScale,
+        size: (2.5 + Math.random() * 3.5) * Math.min(1.2, speedScale + 0.3),
         color,
         alpha: 1,
       });
@@ -361,7 +666,8 @@
   }
 
   function startDrawing(event) {
-    if (gameState !== 'PLAYING') return;
+    if (gameState !== 'PLAYING' || isSettingsOpen) return;
+    SoundFX.ensureContext();
     if (currentInk <= 5) return;
 
     event.preventDefault();
@@ -381,10 +687,11 @@
       segments: [],
     };
     strokes.push(activeStroke);
+    spawnRipple(pt.x, pt.y, 18, COLORS.ink);
   }
 
   function moveDrawing(event) {
-    if (!isDrawing || !activeStroke || gameState !== 'PLAYING') return;
+    if (!isDrawing || !activeStroke || gameState !== 'PLAYING' || isSettingsOpen) return;
     if (activePointerId !== null && event.pointerId !== activePointerId) return;
 
     event.preventDefault();
@@ -409,6 +716,14 @@
     currentInk = Math.max(0, currentInk - inkNeeded);
     totalInkUsed += dist;
     updateInkUI();
+
+    const inkRatio = currentInk / INK_CONFIG.maxInk;
+    SoundFX.playDrawSegment(inkRatio);
+
+    // Subtle spark at the drawing tip
+    if (Math.random() < 0.45) {
+      spawnBurstParticles(pt.x, pt.y, COLORS.ink, 2, 0.45);
+    }
 
     const now = performance.now();
     const newPoint = { x: pt.x, y: pt.y, createdAt: now };
@@ -470,10 +785,12 @@
    * Update Physics, Player Propulsion, Ink Regeneration, and Stroke Expiration
    */
   function update(dtMs, now) {
+    if (isSettingsOpen) return;
+
     const dtSec = dtMs / 1000;
 
     if (gameState === 'PLAYING') {
-      elapsedSeconds = (now - stageStartTime) / 1000;
+      elapsedSeconds = Math.max(0, (now - stageStartTime - pausedAccumulatedMs) / 1000);
 
       // 1. Constant slight rightward propulsion force on the player ball
       if (playerBall) {
@@ -518,6 +835,12 @@
         );
         updateInkUI();
       }
+    } else if (gameState === 'CLEARED' && playerBall && goalZone) {
+      // Smoothly pull the ball toward the center of the Goal Portal on Stage Clear
+      const nextX = playerBall.position.x + (goalZone.x - playerBall.position.x) * 0.14;
+      const nextY = playerBall.position.y + (goalZone.y - playerBall.position.y) * 0.14;
+      Body.setPosition(playerBall, { x: nextX, y: nextY });
+      Body.setAngle(playerBall, playerBall.angle + 0.12);
     }
 
     // 3. Fade out and remove ink segments after 3.5 seconds
@@ -546,10 +869,30 @@
       const p = particles[i];
       p.x += p.vx;
       p.y += p.vy;
-      p.vy += 0.18;
+      p.vy += 0.16;
       p.alpha -= 0.024;
       if (p.alpha <= 0) {
         particles.splice(i, 1);
+      }
+    }
+
+    // 5. Update expanding vector ripples
+    for (let i = ripples.length - 1; i >= 0; i--) {
+      const r = ripples[i];
+      r.radius += (r.maxRadius - r.radius) * 0.18 + 0.9;
+      r.alpha -= 0.038;
+      if (r.alpha <= 0 || r.radius >= r.maxRadius) {
+        ripples.splice(i, 1);
+      }
+    }
+
+    // 6. Update screen shake decay
+    if (screenShake.durationMs > 0) {
+      screenShake.elapsedMs += dtMs;
+      if (screenShake.elapsedMs >= screenShake.durationMs) {
+        screenShake.intensity = 0;
+        screenShake.durationMs = 0;
+        screenShake.elapsedMs = 0;
       }
     }
 
@@ -575,6 +918,17 @@
     ctx.fillStyle = COLORS.bg;
     ctx.fillRect(0, 0, width, height);
 
+    ctx.save();
+
+    // Apply Camera Screen Shake if active
+    if (screenShake.durationMs > 0 && settings.shakeEnabled) {
+      const decay = 1 - screenShake.elapsedMs / screenShake.durationMs;
+      const mag = screenShake.intensity * decay;
+      const offsetX = (Math.random() - 0.5) * 2 * mag;
+      const offsetY = (Math.random() - 0.5) * 2 * mag;
+      ctx.translate(offsetX, offsetY);
+    }
+
     // Subtle geometric grid
     drawGrid();
 
@@ -590,11 +944,16 @@
     // 5. Drawn Ink Lines (Smooth Curves with Fade-out)
     drawInkStrokes(now);
 
-    // 6. Player Ball & Motion Trail
+    // 6. Expanding Vector Ripples
+    drawRipples();
+
+    // 7. Player Ball & Motion Trail
     drawPlayerBall();
 
-    // 7. Vector Burst Particles
+    // 8. Vector Burst Particles
     drawParticles();
+
+    ctx.restore();
   }
 
   function drawGrid() {
@@ -647,6 +1006,12 @@
     const inset = 6 + pulse * 4;
     ctx.globalAlpha = 0.35 + pulse * 0.25;
     ctx.strokeRect(left + inset, top + inset, gw - inset * 2, gh - inset * 2);
+
+    // Center target crosshair
+    ctx.globalAlpha = 0.25 + pulse * 0.25;
+    ctx.beginPath();
+    ctx.arc(x, y, 8 + pulse * 4, 0, Math.PI * 2);
+    ctx.stroke();
 
     // GOAL Label
     ctx.globalAlpha = 0.9;
@@ -721,6 +1086,20 @@
       }
     }
 
+    ctx.restore();
+  }
+
+  function drawRipples() {
+    if (ripples.length === 0) return;
+    ctx.save();
+    ctx.lineWidth = 1.8;
+    for (const r of ripples) {
+      ctx.globalAlpha = Math.max(0, r.alpha);
+      ctx.strokeStyle = r.color;
+      ctx.beginPath();
+      ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+      ctx.stroke();
+    }
     ctx.restore();
   }
 
@@ -806,15 +1185,57 @@
   canvas.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
 
   quickResetBtn.addEventListener('click', () => {
+    SoundFX.playUiClick();
     initGame();
   });
 
   retryBtn.addEventListener('click', () => {
+    SoundFX.playUiClick();
     initGame();
   });
 
+  // Settings Modal Controls
+  settingsBtn.addEventListener('click', () => {
+    if (isSettingsOpen) {
+      closeSettings();
+    } else {
+      openSettings();
+    }
+  });
+
+  settingsCloseBtn.addEventListener('click', () => {
+    closeSettings();
+  });
+
+  settingsOverlay.addEventListener('click', (e) => {
+    if (e.target === settingsOverlay) {
+      closeSettings();
+    }
+  });
+
+  soundToggleBtn.addEventListener('click', () => {
+    settings.soundEnabled = !settings.soundEnabled;
+    localStorage.setItem('ink_parkour_sound', String(settings.soundEnabled));
+    syncSettingsUI();
+    if (settings.soundEnabled) {
+      SoundFX.playUiClick();
+    }
+  });
+
+  shakeToggleBtn.addEventListener('click', () => {
+    settings.shakeEnabled = !settings.shakeEnabled;
+    localStorage.setItem('ink_parkour_shake', String(settings.shakeEnabled));
+    syncSettingsUI();
+    SoundFX.playUiClick();
+  });
+
   window.addEventListener('keydown', (e) => {
-    if (e.key === 'r' || e.key === 'R') {
+    if (e.key === 'Escape' && isSettingsOpen) {
+      closeSettings();
+      return;
+    }
+    if ((e.key === 'r' || e.key === 'R') && !isSettingsOpen) {
+      SoundFX.playUiClick();
       initGame();
     }
   });
@@ -828,6 +1249,7 @@
   });
 
   // Boot Game
+  syncSettingsUI();
   initGame();
   requestAnimationFrame(loop);
 })();
