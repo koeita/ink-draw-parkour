@@ -61,6 +61,14 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  transition: opacity 0.2s ease;
+}
+
+.hud.hud-hidden,
+.hud.hud-hidden * {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none !important;
 }
 
 .hud-top {
@@ -83,7 +91,7 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-width: 180px;
+  min-width: 210px;
 }
 
 .brand-mark {
@@ -91,14 +99,29 @@ body {
   height: 10px;
   background-color: var(--ink-accent);
   display: inline-block;
+  flex-shrink: 0;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .brand-title {
   font-family: var(--font-display);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   color: var(--text-main);
+}
+
+.hud-stage-label {
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--ink-accent);
 }
 
 /* Ink Gauge */
@@ -158,13 +181,14 @@ body {
   font-size: 0.68rem;
   letter-spacing: 0.14em;
   color: var(--text-muted);
-  opacity: 0.8;
+  opacity: 0.85;
 }
 
 /* Buttons */
 .ghost-btn,
 .primary-btn,
-.toggle-btn {
+.toggle-btn,
+.stage-card {
   pointer-events: auto;
   font-family: var(--font-display);
   font-weight: 700;
@@ -189,15 +213,20 @@ body {
 
 .ghost-btn:active,
 .primary-btn:active,
-.toggle-btn:active {
+.toggle-btn:active,
+.stage-card:active {
   transform: translateY(1px);
+}
+
+.btn-hidden {
+  display: none !important;
 }
 
 /* Overlay Modal */
 .overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(18, 20, 26, 0.82);
+  background-color: rgba(18, 20, 26, 0.84);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -206,6 +235,10 @@ body {
   opacity: 1;
   visibility: visible;
   transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+#settings-overlay {
+  z-index: 40;
 }
 
 .overlay.hidden,
@@ -217,11 +250,159 @@ body {
 
 .modal-card {
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
   background-color: #14161c;
   border: 1px solid var(--border-subtle);
   padding: 32px 28px;
   text-align: left;
+}
+
+/* Main Menu Card & Stage Grid */
+.menu-card {
+  max-width: 640px;
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+}
+
+.menu-header {
+  margin-bottom: 24px;
+}
+
+.menu-kicker-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.menu-kicker-row .modal-kicker {
+  margin-bottom: 0;
+}
+
+.menu-title {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text-main);
+  margin-bottom: 8px;
+}
+
+.menu-subtitle {
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.stage-section {
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 18px 0;
+  margin-bottom: 22px;
+}
+
+.stage-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.stage-section-title {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--text-muted);
+}
+
+.stage-progress-text {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--goal-accent);
+}
+
+.stage-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+}
+
+.stage-card {
+  background-color: #191c24;
+  border: 1px solid var(--border-subtle);
+  padding: 12px 14px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stage-card:hover {
+  border-color: var(--ink-accent);
+  background-color: rgba(0, 240, 255, 0.05);
+}
+
+.stage-card.active-stage {
+  border-color: var(--ink-accent);
+}
+
+.stage-card.cleared {
+  border-left: 3px solid var(--goal-accent);
+}
+
+.stage-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stage-card-num {
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--ink-accent);
+}
+
+.stage-card-badge {
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--goal-accent);
+}
+
+.stage-card-name {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text-main);
+}
+
+.stage-card-meta {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.menu-footer {
+  display: flex;
+  gap: 12px;
+}
+
+.menu-footer .primary-btn {
+  flex: 2;
+}
+
+.menu-footer .menu-settings-btn {
+  flex: 1;
+  padding: 14px 16px;
+  font-size: 0.8rem;
 }
 
 .modal-kicker {
@@ -340,6 +521,27 @@ body {
   justify-content: flex-end;
 }
 
+.modal-actions-stack {
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal-actions-row {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.modal-actions-row .primary-btn {
+  flex: 2;
+}
+
+.modal-actions-row .ghost-btn {
+  flex: 1;
+  padding: 14px 16px;
+  font-size: 0.8rem;
+}
+
 .primary-btn {
   width: 100%;
   background-color: var(--ink-accent);
@@ -379,6 +581,14 @@ body {
 
   .modal-card {
     padding: 24px 20px;
+  }
+
+  .menu-title {
+    font-size: 1.65rem;
+  }
+
+  .stage-grid {
+    grid-template-columns: 1fr 1fr;
   }
 
   .modal-title {

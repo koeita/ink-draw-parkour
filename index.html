@@ -14,11 +14,14 @@
     <canvas id="game-canvas"></canvas>
 
     <!-- HUD: Ink Gauge & Status -->
-    <header class="hud" aria-label="Game HUD">
+    <header id="game-hud" class="hud" aria-label="Game HUD">
       <div class="hud-top">
         <div class="brand">
           <span class="brand-mark"></span>
-          <span class="brand-title">INK DRAW PARKOUR</span>
+          <div class="brand-text">
+            <span class="brand-title">INK DRAW PARKOUR</span>
+            <span id="hud-stage-label" class="hud-stage-label">STAGE 01 — FIRST BRIDGE</span>
+          </div>
         </div>
         <div class="ink-panel">
           <div class="ink-header">
@@ -31,17 +34,47 @@
         </div>
         <div class="hud-actions">
           <button id="quick-reset-btn" class="ghost-btn" type="button">RESET</button>
+          <button id="hud-menu-btn" class="ghost-btn" type="button">MENU</button>
           <button id="settings-btn" class="ghost-btn" type="button">SETTINGS</button>
         </div>
       </div>
-      <p class="hud-hint">DRAG OR SWIPE TO DRAW INK PLATFORMS — LINES FADE IN 3.5s</p>
+      <p id="hud-hint" class="hud-hint">DRAG OR SWIPE TO DRAW INK PLATFORMS — LINES FADE IN 3.5s</p>
     </header>
+
+    <!-- Main Menu Overlay -->
+    <div id="main-menu-overlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="menu-title">
+      <div class="modal-card menu-card">
+        <div class="menu-header">
+          <div class="menu-kicker-row">
+            <span class="brand-mark"></span>
+            <p class="modal-kicker">2D PHYSICS INK ACTION</p>
+          </div>
+          <h1 id="menu-title" class="menu-title">INK DRAW PARKOUR</h1>
+          <p class="menu-subtitle">マウスや指で描いた軌跡が足場になるパルクールアクション。ステージを選択してスタートしてください。</p>
+        </div>
+
+        <div class="stage-section">
+          <div class="stage-section-header">
+            <span class="stage-section-title">SELECT STAGE</span>
+            <span id="stage-progress-text" class="stage-progress-text">0 / 5 CLEARED</span>
+          </div>
+          <div id="stage-grid" class="stage-grid">
+            <!-- Populated dynamically by main.js -->
+          </div>
+        </div>
+
+        <div class="menu-footer">
+          <button id="menu-play-btn" class="primary-btn" type="button">START STAGE 01</button>
+          <button id="menu-settings-btn" class="ghost-btn menu-settings-btn" type="button">SETTINGS</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Overlay for Stage Clear / Game Over -->
     <div id="overlay" class="overlay hidden" role="dialog" aria-modal="true">
       <div class="modal-card">
         <p id="overlay-kicker" class="modal-kicker">STATUS</p>
-        <h1 id="overlay-title" class="modal-title">STAGE CLEAR</h1>
+        <h2 id="overlay-title" class="modal-title">STAGE CLEAR</h2>
         <p id="overlay-message" class="modal-message">Goal reached.</p>
         <div class="modal-stats">
           <div class="stat-item">
@@ -53,13 +86,17 @@
             <span id="stat-ink" class="stat-value">0px</span>
           </div>
         </div>
-        <div class="modal-actions">
-          <button id="retry-btn" class="primary-btn" type="button">RETRY</button>
+        <div class="modal-actions modal-actions-stack">
+          <button id="next-stage-btn" class="primary-btn btn-hidden" type="button">NEXT STAGE</button>
+          <div class="modal-actions-row">
+            <button id="retry-btn" class="primary-btn" type="button">RETRY</button>
+            <button id="overlay-menu-btn" class="ghost-btn" type="button">MENU</button>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Settings Modal (Contains Sound Button, reusable from Main Menu & HUD) -->
+    <!-- Settings Modal (Contains Sound Button, accessible from Main Menu & HUD) -->
     <div id="settings-overlay" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
       <div class="modal-card">
         <p class="modal-kicker">CONFIGURATION</p>

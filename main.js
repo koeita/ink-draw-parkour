@@ -3,20 +3,51 @@
 
   const { Engine, World, Bodies, Body, Events, Composite } = Matter;
 
+  // Safe localStorage wrappers (prevents SecurityError on strict file:// origins)
+  function safeGetItem(key, fallback = null) {
+    try {
+      const val = localStorage.getItem(key);
+      return val !== null ? val : fallback;
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  function safeSetItem(key, value) {
+    try {
+      localStorage.setItem(key, value);
+    } catch (_) {}
+  }
+
   // DOM Elements
   const canvas = document.getElementById('game-canvas');
   const ctx = canvas.getContext('2d');
+  const gameHud = document.getElementById('game-hud');
+  const hudStageLabel = document.getElementById('hud-stage-label');
+  const hudHint = document.getElementById('hud-hint');
   const inkBarFill = document.getElementById('ink-bar-fill');
   const inkValueText = document.getElementById('ink-value');
   const quickResetBtn = document.getElementById('quick-reset-btn');
+  const hudMenuBtn = document.getElementById('hud-menu-btn');
   const settingsBtn = document.getElementById('settings-btn');
+
+  // Main Menu Elements
+  const mainMenuOverlay = document.getElementById('main-menu-overlay');
+  const stageGrid = document.getElementById('stage-grid');
+  const stageProgressText = document.getElementById('stage-progress-text');
+  const menuPlayBtn = document.getElementById('menu-play-btn');
+  const menuSettingsBtn = document.getElementById('menu-settings-btn');
+
+  // Stage Clear / Game Over Modal Elements
   const overlay = document.getElementById('overlay');
   const overlayKicker = document.getElementById('overlay-kicker');
   const overlayTitle = document.getElementById('overlay-title');
   const overlayMessage = document.getElementById('overlay-message');
   const statTime = document.getElementById('stat-time');
   const statInk = document.getElementById('stat-ink');
+  const nextStageBtn = document.getElementById('next-stage-btn');
   const retryBtn = document.getElementById('retry-btn');
+  const overlayMenuBtn = document.getElementById('overlay-menu-btn');
 
   // Settings Modal Elements
   const settingsOverlay = document.getElementById('settings-overlay');
@@ -30,6 +61,7 @@
     grid: 'rgba(255, 255, 255, 0.03)',
     platform: '#2a2e3b',
     platformStroke: '#4b5369',
+    movingStroke: '#00f0ff',
     ink: '#00f0ff',
     inkCore: '#e0ffff',
     ballFill: '#f3f4f6',
@@ -55,11 +87,147 @@
     minRollAssistSpeed: 2.6,
   };
 
-  // User Preferences (Persisted in localStorage)
+  /**
+   * 5 Parkour Stage Definitions
+   */
+  const STAGES = [
+    {
+      id: 1,
+      code: 'STAGE 01',
+      name: 'FIRST BRIDGE',
+      hint: 'STAGE 01: 空隙にインクで橋を描き、右端のGOAL枠へ導いてください',
+      maxInk: 950,
+      startYRatio: 0.52,
+      startWidthRatio: 0.16,
+      goalYRatio: 0.48,
+      goalWidthRatio: 0.12,
+      obstacles: [
+        { xRatio: 0.5, yRatio: 0.56, wRatio: 0.1, h: 16 },
+      ],
+      moving: [],
+    },
+    {
+      id: 2,
+      code: 'STAGE 02',
+      name: 'HIGH VAULT',
+      hint: 'STAGE 02: 右上がりのスロープを描いて加速し、高所のGOALへ跳躍してください',
+      maxInk: 950,
+      startYRatio: 0.68,
+      startWidthRatio: 0.16,
+      goalYRatio: 0.28,
+      goalWidthRatio: 0.12,
+      obstacles: [
+        { xRatio: 0.44, yRatio: 0.64, wRatio: 0.11, h: 16 },
+      ],
+      moving: [],
+    },
+    {
+      id: 3,
+      code: 'STAGE 03',
+      name: 'THE MONOLITH',
+      hint: 'STAGE 03: 中央の巨大な障壁をジャンプ台インクで飛び越えてください',
+      maxInk: 900,
+      startYRatio: 0.62,
+      startWidthRatio: 0.15,
+      goalYRatio: 0.52,
+      goalWidthRatio: 0.12,
+      obstacles: [
+        // Central vertical monolith barrier
+        { xRatio: 0.5, yRatio: 0.49, w: 22, hRatio: 0.25 },
+      ],
+      moving: [],
+    },
+    {
+      id: 4,
+      code: 'STAGE 04',
+      name: 'SHIFTING GATES',
+      hint: 'STAGE 04: 上下に動く可動リフトと障壁のタイミングを見極めてください',
+      maxInk: 900,
+      startYRatio: 0.55,
+      startWidthRatio: 0.14,
+      goalYRatio: 0.42,
+      goalWidthRatio: 0.11,
+      obstacles: [],
+      moving: [
+        {
+          xRatio: 0.38,
+          yRatio: 0.56,
+          wRatio: 0.09,
+          h: 16,
+          ampX: 0,
+          ampYRatio: 0.16,
+          speed: 0.0024,
+          phase: 0,
+          isHazard: false,
+        },
+        {
+          xRatio: 0.66,
+          yRatio: 0.46,
+          w: 20,
+          hRatio: 0.18,
+          ampX: 0,
+          ampYRatio: 0.17,
+          speed: 0.003,
+          phase: 2.1,
+          isHazard: false,
+        },
+      ],
+    },
+    {
+      id: 5,
+      code: 'STAGE 05',
+      name: 'ABYSSAL GAUNTLET',
+      hint: 'STAGE 05: 赤いレーザー障壁を避けながらゴールへ到達する最終試練',
+      maxInk: 820,
+      startYRatio: 0.64,
+      startWidthRatio: 0.13,
+      goalYRatio: 0.32,
+      goalWidthRatio: 0.11,
+      obstacles: [
+        { xRatio: 0.33, yRatio: 0.62, wRatio: 0.07, h: 16 },
+        { xRatio: 0.68, yRatio: 0.48, wRatio: 0.07, h: 16 },
+      ],
+      moving: [
+        {
+          xRatio: 0.51,
+          yRatio: 0.48,
+          w: 18,
+          hRatio: 0.16,
+          ampX: 0,
+          ampYRatio: 0.18,
+          speed: 0.0032,
+          phase: 0.8,
+          isHazard: true,
+        },
+      ],
+    },
+  ];
+
+  // User Preferences & Stage Progress (Persisted in localStorage)
   const settings = {
-    soundEnabled: localStorage.getItem('ink_parkour_sound') !== 'false',
-    shakeEnabled: localStorage.getItem('ink_parkour_shake') !== 'false',
+    soundEnabled: safeGetItem('ink_parkour_sound', 'true') !== 'false',
+    shakeEnabled: safeGetItem('ink_parkour_shake', 'true') !== 'false',
   };
+
+  let stageProgress = {};
+  try {
+    const raw = safeGetItem('ink_parkour_progress', '{}');
+    stageProgress = JSON.parse(raw) || {};
+  } catch (_) {
+    stageProgress = {};
+  }
+
+  function saveStageProgress(stageId, timeSec, inkPx) {
+    const prev = stageProgress[stageId];
+    const isNewBest = !prev || timeSec < prev.bestTime;
+    stageProgress[stageId] = {
+      cleared: true,
+      bestTime: prev ? Math.min(prev.bestTime, timeSec) : timeSec,
+      bestInk: prev ? Math.min(prev.bestInk, Math.round(inkPx)) : Math.round(inkPx),
+    };
+    safeSetItem('ink_parkour_progress', JSON.stringify(stageProgress));
+    return isNewBest;
+  }
 
   /**
    * Web Audio API Synthesizer for Minimal Vector Sound Effects
@@ -71,165 +239,181 @@
 
     function ensureContext() {
       if (!settings.soundEnabled) return null;
-      if (!audioCtx) {
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (AudioContextClass) {
-          audioCtx = new AudioContextClass();
+      try {
+        if (!audioCtx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) {
+            audioCtx = new AudioContextClass();
+          }
         }
-      }
-      if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume().catch(() => {});
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume().catch(() => {});
+        }
+      } catch (_) {
+        return null;
       }
       return audioCtx;
     }
 
     function playUiClick() {
-      const ctxAudio = ensureContext();
-      if (!ctxAudio) return;
+      try {
+        const ctxAudio = ensureContext();
+        if (!ctxAudio) return;
 
-      const now = ctxAudio.currentTime;
-      const osc = ctxAudio.createOscillator();
-      const gain = ctxAudio.createGain();
+        const now = ctxAudio.currentTime;
+        const osc = ctxAudio.createOscillator();
+        const gain = ctxAudio.createGain();
 
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(680, now);
-      osc.frequency.exponentialRampToValueAtTime(920, now + 0.045);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(680, now);
+        osc.frequency.exponentialRampToValueAtTime(920, now + 0.045);
 
-      gain.gain.setValueAtTime(0.08, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
 
-      osc.connect(gain);
-      gain.connect(ctxAudio.destination);
-      osc.start(now);
-      osc.stop(now + 0.05);
+        osc.connect(gain);
+        gain.connect(ctxAudio.destination);
+        osc.start(now);
+        osc.stop(now + 0.05);
+      } catch (_) {}
     }
 
     function playDrawSegment(inkRatio) {
-      const ctxAudio = ensureContext();
-      if (!ctxAudio) return;
+      try {
+        const ctxAudio = ensureContext();
+        if (!ctxAudio) return;
 
-      const perfNow = performance.now();
-      if (perfNow - lastDrawSoundTime < 28) return;
-      lastDrawSoundTime = perfNow;
+        const perfNow = performance.now();
+        if (perfNow - lastDrawSoundTime < 28) return;
+        lastDrawSoundTime = perfNow;
 
-      const now = ctxAudio.currentTime;
-      const osc = ctxAudio.createOscillator();
-      const gain = ctxAudio.createGain();
+        const now = ctxAudio.currentTime;
+        const osc = ctxAudio.createOscillator();
+        const gain = ctxAudio.createGain();
 
-      const baseFreq = 320 + inkRatio * 360 + (Math.random() - 0.5) * 35;
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(baseFreq, now);
-      osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.18, now + 0.04);
+        const baseFreq = 320 + inkRatio * 360 + (Math.random() - 0.5) * 35;
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(baseFreq, now);
+        osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.18, now + 0.04);
 
-      gain.gain.setValueAtTime(0.045, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+        gain.gain.setValueAtTime(0.045, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
 
-      osc.connect(gain);
-      gain.connect(ctxAudio.destination);
-      osc.start(now);
-      osc.stop(now + 0.05);
+        osc.connect(gain);
+        gain.connect(ctxAudio.destination);
+        osc.start(now);
+        osc.stop(now + 0.05);
+      } catch (_) {}
     }
 
     function playBounce(impactSpeed, isInk) {
-      const ctxAudio = ensureContext();
-      if (!ctxAudio) return;
+      try {
+        const ctxAudio = ensureContext();
+        if (!ctxAudio) return;
 
-      const perfNow = performance.now();
-      if (perfNow - lastBounceSoundTime < 75) return;
-      lastBounceSoundTime = perfNow;
+        const perfNow = performance.now();
+        if (perfNow - lastBounceSoundTime < 75) return;
+        lastBounceSoundTime = perfNow;
 
-      const now = ctxAudio.currentTime;
-      const osc = ctxAudio.createOscillator();
-      const gain = ctxAudio.createGain();
+        const now = ctxAudio.currentTime;
+        const osc = ctxAudio.createOscillator();
+        const gain = ctxAudio.createGain();
 
-      const clampedSpeed = Math.min(12, Math.max(1.5, impactSpeed));
-      const startFreq = isInk ? 210 + clampedSpeed * 18 : 130 + clampedSpeed * 12;
+        const clampedSpeed = Math.min(12, Math.max(1.5, impactSpeed));
+        const startFreq = isInk ? 210 + clampedSpeed * 18 : 130 + clampedSpeed * 12;
 
-      osc.type = isInk ? 'triangle' : 'sine';
-      osc.frequency.setValueAtTime(startFreq, now);
-      osc.frequency.exponentialRampToValueAtTime(58, now + 0.09);
+        osc.type = isInk ? 'triangle' : 'sine';
+        osc.frequency.setValueAtTime(startFreq, now);
+        osc.frequency.exponentialRampToValueAtTime(58, now + 0.09);
 
-      const volume = Math.min(0.16, 0.03 + (clampedSpeed / 12) * 0.12);
-      gain.gain.setValueAtTime(volume, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.095);
+        const volume = Math.min(0.16, 0.03 + (clampedSpeed / 12) * 0.12);
+        gain.gain.setValueAtTime(volume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.095);
 
-      osc.connect(gain);
-      gain.connect(ctxAudio.destination);
-      osc.start(now);
-      osc.stop(now + 0.1);
+        osc.connect(gain);
+        gain.connect(ctxAudio.destination);
+        osc.start(now);
+        osc.stop(now + 0.1);
+      } catch (_) {}
     }
 
     function playJumpBoost() {
-      const ctxAudio = ensureContext();
-      if (!ctxAudio) return;
+      try {
+        const ctxAudio = ensureContext();
+        if (!ctxAudio) return;
 
-      const now = ctxAudio.currentTime;
-      const osc = ctxAudio.createOscillator();
-      const gain = ctxAudio.createGain();
+        const now = ctxAudio.currentTime;
+        const osc = ctxAudio.createOscillator();
+        const gain = ctxAudio.createGain();
 
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(280, now);
-      osc.frequency.exponentialRampToValueAtTime(740, now + 0.14);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(280, now);
+        osc.frequency.exponentialRampToValueAtTime(740, now + 0.14);
 
-      gain.gain.setValueAtTime(0.11, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        gain.gain.setValueAtTime(0.11, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
 
-      osc.connect(gain);
-      gain.connect(ctxAudio.destination);
-      osc.start(now);
-      osc.stop(now + 0.16);
+        osc.connect(gain);
+        gain.connect(ctxAudio.destination);
+        osc.start(now);
+        osc.stop(now + 0.16);
+      } catch (_) {}
     }
 
     function playClear() {
-      const ctxAudio = ensureContext();
-      if (!ctxAudio) return;
+      try {
+        const ctxAudio = ensureContext();
+        if (!ctxAudio) return;
 
-      const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
-      const now = ctxAudio.currentTime;
+        const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
+        const now = ctxAudio.currentTime;
 
-      notes.forEach((freq, idx) => {
-        const osc = ctxAudio.createOscillator();
-        const gain = ctxAudio.createGain();
-        const startTime = now + idx * 0.075;
+        notes.forEach((freq, idx) => {
+          const osc = ctxAudio.createOscillator();
+          const gain = ctxAudio.createGain();
+          const startTime = now + idx * 0.075;
 
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(freq, startTime);
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, startTime);
 
-        gain.gain.setValueAtTime(0.001, startTime);
-        gain.gain.linearRampToValueAtTime(0.12, startTime + 0.015);
-        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.36);
+          gain.gain.setValueAtTime(0.001, startTime);
+          gain.gain.linearRampToValueAtTime(0.12, startTime + 0.015);
+          gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.36);
 
-        osc.connect(gain);
-        gain.connect(ctxAudio.destination);
-        osc.start(startTime);
-        osc.stop(startTime + 0.38);
-      });
+          osc.connect(gain);
+          gain.connect(ctxAudio.destination);
+          osc.start(startTime);
+          osc.stop(startTime + 0.38);
+        });
+      } catch (_) {}
     }
 
     function playGameOver() {
-      const ctxAudio = ensureContext();
-      if (!ctxAudio) return;
+      try {
+        const ctxAudio = ensureContext();
+        if (!ctxAudio) return;
 
-      const now = ctxAudio.currentTime;
-      const freqs = [190, 135];
+        const now = ctxAudio.currentTime;
+        const freqs = [190, 135];
 
-      freqs.forEach((f, idx) => {
-        const osc = ctxAudio.createOscillator();
-        const gain = ctxAudio.createGain();
-        const startTime = now + idx * 0.11;
+        freqs.forEach((f, idx) => {
+          const osc = ctxAudio.createOscillator();
+          const gain = ctxAudio.createGain();
+          const startTime = now + idx * 0.11;
 
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(f, startTime);
-        osc.frequency.exponentialRampToValueAtTime(f * 0.48, startTime + 0.26);
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(f, startTime);
+          osc.frequency.exponentialRampToValueAtTime(f * 0.48, startTime + 0.26);
 
-        gain.gain.setValueAtTime(0.09, startTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.28);
+          gain.gain.setValueAtTime(0.09, startTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.28);
 
-        osc.connect(gain);
-        gain.connect(ctxAudio.destination);
-        osc.start(startTime);
-        osc.stop(startTime + 0.29);
-      });
+          osc.connect(gain);
+          gain.connect(ctxAudio.destination);
+          osc.start(startTime);
+          osc.stop(startTime + 0.29);
+        });
+      } catch (_) {}
     }
 
     return {
@@ -250,8 +434,10 @@
   let height = window.innerHeight;
   let dpr = Math.min(window.devicePixelRatio || 1, 2);
 
+  let currentStageIndex = 0;
   let playerBall = null;
   let staticPlatforms = [];
+  let movingPlatforms = [];
   let goalZone = null;
   let spikeZone = null;
 
@@ -261,6 +447,7 @@
   let isDrawing = false;
   let activePointerId = null;
 
+  let maxStageInk = INK_CONFIG.maxInk;
   let currentInk = INK_CONFIG.maxInk;
   let totalInkUsed = 0;
   let stageStartTime = 0;
@@ -268,7 +455,7 @@
   let pauseStartedAt = 0;
   let isSettingsOpen = false;
   let elapsedSeconds = 0;
-  let gameState = 'PLAYING'; // 'PLAYING' | 'CLEARED' | 'GAMEOVER'
+  let gameState = 'MENU'; // 'MENU' | 'PLAYING' | 'CLEARED' | 'GAMEOVER'
 
   // Visual Effects (minimal vector trails, ripples, bursts & screen shake)
   let ballTrail = [];
@@ -276,6 +463,78 @@
   let ripples = [];
   let screenShake = { intensity: 0, durationMs: 0, elapsedMs: 0 };
   let lastBoostEffectTime = 0;
+
+  /**
+   * Populate and Refresh Stage Selection Grid on Main Menu
+   */
+  function renderMainMenu() {
+    stageGrid.innerHTML = '';
+    let clearedCount = 0;
+    let recommendedIndex = 0;
+    let foundUncleared = false;
+
+    STAGES.forEach((stage, index) => {
+      const prog = stageProgress[stage.id];
+      const isCleared = Boolean(prog && prog.cleared);
+      if (isCleared) {
+        clearedCount++;
+      } else if (!foundUncleared) {
+        recommendedIndex = index;
+        foundUncleared = true;
+      }
+
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'stage-card';
+      if (index === currentStageIndex) card.classList.add('active-stage');
+      if (isCleared) card.classList.add('cleared');
+
+      const bestText = isCleared ? `BEST ${prog.bestTime.toFixed(2)}s` : 'NOT CLEARED';
+      const badgeText = isCleared ? 'CLEARED' : '';
+
+      card.innerHTML = `
+        <div class="stage-card-top">
+          <span class="stage-card-num">${stage.code}</span>
+          <span class="stage-card-badge">${badgeText}</span>
+        </div>
+        <div class="stage-card-name">${stage.name}</div>
+        <div class="stage-card-meta">${bestText}</div>
+      `;
+
+      card.addEventListener('click', () => {
+        SoundFX.playUiClick();
+        startStage(index);
+      });
+
+      stageGrid.appendChild(card);
+    });
+
+    stageProgressText.textContent = `${clearedCount} / ${STAGES.length} CLEARED`;
+
+    const targetStage = STAGES[foundUncleared ? recommendedIndex : currentStageIndex];
+    menuPlayBtn.textContent = `START ${targetStage.code}`;
+    menuPlayBtn.onclick = () => {
+      SoundFX.playUiClick();
+      startStage(foundUncleared ? recommendedIndex : currentStageIndex);
+    };
+  }
+
+  function showMainMenu() {
+    stopDrawing();
+    hideOverlay();
+    gameState = 'MENU';
+    gameHud.classList.add('hud-hidden');
+    mainMenuOverlay.classList.remove('hidden');
+    renderMainMenu();
+    buildPreviewOrStage(false);
+  }
+
+  function startStage(stageIndex) {
+    currentStageIndex = Math.max(0, Math.min(STAGES.length - 1, stageIndex));
+    mainMenuOverlay.classList.add('hidden');
+    gameHud.classList.remove('hud-hidden');
+    initGame();
+  }
 
   /**
    * Sync Settings Modal Buttons with current state
@@ -348,9 +607,9 @@
   }
 
   /**
-   * Build or Rebuild Stage Geometry & Physics World
+   * Build Physics World for Current Stage (playable or background menu preview)
    */
-  function initGame() {
+  function buildPreviewOrStage(spawnBall) {
     updateCanvasSize();
 
     if (engine) {
@@ -371,29 +630,46 @@
     ripples = [];
     screenShake = { intensity: 0, durationMs: 0, elapsedMs: 0 };
 
-    currentInk = INK_CONFIG.maxInk;
+    const stage = STAGES[currentStageIndex];
+    maxStageInk = stage.maxInk || INK_CONFIG.maxInk;
+    currentInk = maxStageInk;
     totalInkUsed = 0;
     stageStartTime = performance.now();
     pausedAccumulatedMs = 0;
     pauseStartedAt = isSettingsOpen ? performance.now() : 0;
     elapsedSeconds = 0;
-    gameState = 'PLAYING';
-    hideOverlay();
+
+    hudStageLabel.textContent = `${stage.code} — ${stage.name}`;
+    hudHint.textContent = stage.hint;
     updateInkUI();
 
-    buildStageGeometry();
-    spawnPlayer();
-    bindCollisionEvents();
+    buildStageGeometry(stage);
+    if (spawnBall) {
+      spawnPlayer(stage);
+      bindCollisionEvents();
+    } else {
+      playerBall = null;
+    }
   }
 
   /**
-   * Create Minimal Parkour Stage (Start Ledge, Mid Obstacles, Goal Portal, Bottom Spikes)
+   * Start Active Gameplay on Current Stage
    */
-  function buildStageGeometry() {
-    staticPlatforms = [];
+  function initGame() {
+    hideOverlay();
+    gameState = 'PLAYING';
+    buildPreviewOrStage(true);
+  }
 
-    const startPlatformWidth = Math.max(140, width * 0.16);
-    const startPlatformY = height * 0.52;
+  /**
+   * Create Stage Geometry from Stage Definition
+   */
+  function buildStageGeometry(stage) {
+    staticPlatforms = [];
+    movingPlatforms = [];
+
+    const startPlatformWidth = Math.max(130, width * stage.startWidthRatio);
+    const startPlatformY = height * stage.startYRatio;
 
     // 1. Left Starting Platform
     const startPlatform = Bodies.rectangle(
@@ -410,21 +686,54 @@
     );
     staticPlatforms.push(startPlatform);
 
-    // 2. Mid-stage Floating Obstacle / Pillar to encourage parkour arcs
-    const midPillarX = width * 0.52;
-    const midPillarY = height * 0.56;
-    const midPlatform = Bodies.rectangle(midPillarX, midPillarY, Math.max(80, width * 0.08), 16, {
-      isStatic: true,
-      friction: 0.01,
-      restitution: 0.2,
-      label: 'stage-platform',
-    });
-    staticPlatforms.push(midPlatform);
+    // 2. Stage Static Obstacles / Pillars
+    for (const obs of stage.obstacles) {
+      const obsW = obs.w ? obs.w : Math.max(76, width * obs.wRatio);
+      const obsH = obs.h ? obs.h : Math.max(80, height * obs.hRatio);
+      const obsX = width * obs.xRatio;
+      const obsY = height * obs.yRatio;
 
-    // 3. Right Goal Platform & Sensor at Right Edge
-    const goalPlatformWidth = Math.max(110, width * 0.12);
+      const body = Bodies.rectangle(obsX, obsY, obsW, obsH, {
+        isStatic: true,
+        friction: 0.01,
+        restitution: 0.25,
+        label: 'stage-platform',
+      });
+      staticPlatforms.push(body);
+    }
+
+    // 3. Stage Moving Platforms / Dynamic Obstacles
+    for (const mov of stage.moving) {
+      const movW = mov.w ? mov.w : Math.max(76, width * mov.wRatio);
+      const movH = mov.h ? mov.h : Math.max(70, height * mov.hRatio);
+      const baseX = width * mov.xRatio;
+      const baseY = height * mov.yRatio;
+      const ampX = mov.ampXRatio ? width * mov.ampXRatio : mov.ampX || 0;
+      const ampY = mov.ampYRatio ? height * mov.ampYRatio : mov.ampY || 0;
+
+      const body = Bodies.rectangle(baseX, baseY, movW, movH, {
+        isStatic: true,
+        friction: 0.01,
+        restitution: 0.3,
+        label: mov.isHazard ? 'hazard-block' : 'stage-platform',
+      });
+
+      movingPlatforms.push({
+        body,
+        baseX,
+        baseY,
+        ampX,
+        ampY,
+        speed: mov.speed || 0.0025,
+        phase: mov.phase || 0,
+        isHazard: Boolean(mov.isHazard),
+      });
+    }
+
+    // 4. Right Goal Platform & Sensor at Right Edge
+    const goalPlatformWidth = Math.max(105, width * stage.goalWidthRatio);
     const goalPlatformX = width - goalPlatformWidth / 2;
-    const goalPlatformY = height * 0.46;
+    const goalPlatformY = height * stage.goalYRatio;
 
     const goalPlatform = Bodies.rectangle(
       goalPlatformX,
@@ -440,7 +749,7 @@
     );
     staticPlatforms.push(goalPlatform);
 
-    const goalSensorWidth = Math.max(72, goalPlatformWidth * 0.7);
+    const goalSensorWidth = Math.max(72, goalPlatformWidth * 0.72);
     const goalSensorHeight = 110;
     goalZone = {
       x: width - goalSensorWidth / 2 - 12,
@@ -460,7 +769,7 @@
       ),
     };
 
-    // 4. Bottom Spike Pit Sensor
+    // 5. Bottom Spike Pit Sensor
     const spikeHeight = 28;
     spikeZone = {
       y: height - spikeHeight,
@@ -481,6 +790,7 @@
 
     World.add(world, [
       ...staticPlatforms,
+      ...movingPlatforms.map((m) => m.body),
       goalZone.body,
       spikeZone.body,
       leftWall,
@@ -490,9 +800,9 @@
   /**
    * Spawn Player Ball on the left side
    */
-  function spawnPlayer() {
-    const startX = Math.max(54, width * 0.05);
-    const startY = height * 0.52 - 48;
+  function spawnPlayer(stage) {
+    const startX = Math.max(52, width * 0.05);
+    const startY = height * stage.startYRatio - 48;
 
     playerBall = Bodies.circle(startX, startY, PLAYER_CONFIG.radius, {
       restitution: 0.42,
@@ -508,7 +818,7 @@
   }
 
   /**
-   * Handle Collisions (Goal, Spikes, Bounce FX, and Jump-Ramp Boost on Ink Lines)
+   * Handle Collisions (Goal, Spikes, Hazard Blocks, Bounce FX, and Jump-Ramp Boost)
    */
   function bindCollisionEvents() {
     Events.on(engine, 'collisionStart', (event) => {
@@ -524,6 +834,11 @@
 
         if (labels.includes('player-ball') && labels.includes('spike-sensor')) {
           triggerGameOver('谷底のトゲに落下しました。足場を描いて再挑戦してください。');
+          return;
+        }
+
+        if (labels.includes('player-ball') && labels.includes('hazard-block')) {
+          triggerGameOver('赤いレーザー障壁に接触しました。軌道を工夫して回避してください。');
           return;
         }
 
@@ -590,21 +905,36 @@
     activeStroke = null;
     activePointerId = null;
 
+    const stage = STAGES[currentStageIndex];
+    const isNewBest = saveStageProgress(stage.id, elapsedSeconds, totalInkUsed);
+
     SoundFX.playClear();
     triggerScreenShake(6, 220);
     spawnBurstParticles(goalZone.x, goalZone.y, COLORS.goalAccent, 32);
     spawnRipple(goalZone.x, goalZone.y, 85, COLORS.goalAccent);
-    spawnRipple(playerBall.position.x, playerBall.position.y, 50, COLORS.ink);
+    if (playerBall) {
+      spawnRipple(playerBall.position.x, playerBall.position.y, 50, COLORS.ink);
+      Body.setStatic(playerBall, true);
+    }
 
-    // Freeze physics velocity on ball so it gets smoothly attracted into the Goal Portal center
-    Body.setStatic(playerBall, true);
-
-    overlayKicker.textContent = 'MISSION ACCOMPLISHED';
+    const hasNextStage = currentStageIndex < STAGES.length - 1;
+    overlayKicker.textContent = isNewBest ? `${stage.code} — NEW RECORD!` : `${stage.code} CLEARED`;
     overlayKicker.classList.remove('danger');
-    overlayTitle.textContent = 'STAGE CLEAR';
-    overlayMessage.textContent = '描いたインクの軌跡でゴールへ到達しました。';
+    overlayTitle.textContent = hasNextStage ? 'STAGE CLEAR' : 'ALL STAGES CLEARED';
+    overlayMessage.textContent = hasNextStage
+      ? `${stage.name} を突破しました。次のステージへ進めます。`
+      : '全5ステージを完全制覇しました！お見事です！';
+
     statTime.textContent = `${elapsedSeconds.toFixed(2)}s`;
     statInk.textContent = `${Math.round(totalInkUsed)}px`;
+
+    if (hasNextStage) {
+      nextStageBtn.textContent = `NEXT: ${STAGES[currentStageIndex + 1].code}`;
+      nextStageBtn.classList.remove('btn-hidden');
+    } else {
+      nextStageBtn.classList.add('btn-hidden');
+    }
+
     showOverlay();
   }
 
@@ -625,17 +955,19 @@
 
     SoundFX.playGameOver();
     triggerScreenShake(9, 280);
-    const impactX = Math.min(width - 16, Math.max(16, playerBall.position.x));
-    const impactY = Math.min(height - 16, Math.max(16, playerBall.position.y));
+    const impactX = playerBall ? Math.min(width - 16, Math.max(16, playerBall.position.x)) : width / 2;
+    const impactY = playerBall ? Math.min(height - 16, Math.max(16, playerBall.position.y)) : height / 2;
     spawnBurstParticles(impactX, impactY, COLORS.spikeFill, 28);
     spawnRipple(impactX, impactY, 64, COLORS.spikeFill);
 
-    overlayKicker.textContent = 'SYSTEM FAILURE';
+    const stage = STAGES[currentStageIndex];
+    overlayKicker.textContent = `${stage.code} — FAILED`;
     overlayKicker.classList.add('danger');
     overlayTitle.textContent = 'GAME OVER';
     overlayMessage.textContent = reasonMessage || '谷底のトゲに落下しました。足場を描いて再挑戦してください。';
     statTime.textContent = `${elapsedSeconds.toFixed(2)}s`;
     statInk.textContent = `${Math.round(totalInkUsed)}px`;
+    nextStageBtn.classList.add('btn-hidden');
     showOverlay();
   }
 
@@ -687,9 +1019,7 @@
     if (canvas.setPointerCapture) {
       try {
         canvas.setPointerCapture(event.pointerId);
-      } catch (_) {
-        // Ignore capture errors on synthetic events
-      }
+      } catch (_) {}
     }
 
     const pt = getCanvasCoords(event);
@@ -719,7 +1049,6 @@
 
     const inkNeeded = dist * INK_CONFIG.costPerPixel;
     if (currentInk < inkNeeded) {
-      // Out of ink: stop current stroke cleanly
       stopDrawing();
       return;
     }
@@ -729,10 +1058,9 @@
     totalInkUsed += dist;
     updateInkUI();
 
-    const inkRatio = currentInk / INK_CONFIG.maxInk;
+    const inkRatio = currentInk / maxStageInk;
     SoundFX.playDrawSegment(inkRatio);
 
-    // Subtle spark at the drawing tip
     if (Math.random() < 0.45) {
       spawnBurstParticles(pt.x, pt.y, COLORS.ink, 2, 0.45);
     }
@@ -741,7 +1069,6 @@
     const newPoint = { x: pt.x, y: pt.y, createdAt: now };
     pts.push(newPoint);
 
-    // Create static Matter.js segment along (prev -> newPoint)
     const midX = (prev.x + newPoint.x) / 2;
     const midY = (prev.y + newPoint.y) / 2;
     const angle = Math.atan2(dy, dx);
@@ -786,7 +1113,7 @@
    * Update Ink Gauge DOM
    */
   function updateInkUI() {
-    const ratio = Math.max(0, Math.min(1, currentInk / INK_CONFIG.maxInk));
+    const ratio = Math.max(0, Math.min(1, currentInk / maxStageInk));
     const percent = Math.round(ratio * 100);
     inkBarFill.style.width = `${percent}%`;
     inkValueText.textContent = `${percent}%`;
@@ -799,12 +1126,27 @@
   }
 
   /**
-   * Update Physics, Player Propulsion, Ink Regeneration, and Stroke Expiration
+   * Update Physics, Moving Platforms, Player Propulsion, Ink Regeneration, and Stroke Expiration
    */
   function update(dtMs, now) {
     if (isSettingsOpen) return;
 
     const dtSec = dtMs / 1000;
+    const simTime = now - pausedAccumulatedMs;
+
+    // Update Moving Platforms / Obstacles
+    for (const m of movingPlatforms) {
+      const prevX = m.body.position.x;
+      const prevY = m.body.position.y;
+      const nextX = m.baseX + Math.sin(simTime * m.speed + m.phase) * m.ampX;
+      const nextY = m.baseY + Math.sin(simTime * m.speed + m.phase) * m.ampY;
+
+      Body.setVelocity(m.body, {
+        x: nextX - prevX,
+        y: nextY - prevY,
+      });
+      Body.setPosition(m.body, { x: nextX, y: nextY });
+    }
 
     if (gameState === 'PLAYING') {
       elapsedSeconds = Math.max(0, (now - stageStartTime - pausedAccumulatedMs) / 1000);
@@ -845,9 +1187,9 @@
       }
 
       // 2. Regenerate ink when not drawing
-      if (!isDrawing && currentInk < INK_CONFIG.maxInk) {
+      if (!isDrawing && currentInk < maxStageInk) {
         currentInk = Math.min(
-          INK_CONFIG.maxInk,
+          maxStageInk,
           currentInk + INK_CONFIG.regenPerSecond * dtSec
         );
         updateInkUI();
@@ -873,7 +1215,6 @@
         }
       }
 
-      // Filter points older than lifetime
       stroke.points = stroke.points.filter((pt) => now - pt.createdAt < INK_CONFIG.lifetimeMs);
 
       if (stroke !== activeStroke && stroke.segments.length === 0 && stroke.points.length <= 1) {
@@ -913,8 +1254,9 @@
       }
     }
 
-    // Step Matter.js physics engine
-    Engine.update(engine, Math.min(dtMs, 20));
+    if (engine) {
+      Engine.update(engine, Math.min(dtMs, 20));
+    }
   }
 
   /**
@@ -931,13 +1273,11 @@
    * Render Everything onto Canvas
    */
   function render(now) {
-    // 1. Dark Minimal Background
     ctx.fillStyle = COLORS.bg;
     ctx.fillRect(0, 0, width, height);
 
     ctx.save();
 
-    // Apply Camera Screen Shake if active
     if (screenShake.durationMs > 0 && settings.shakeEnabled) {
       const decay = 1 - screenShake.elapsedMs / screenShake.durationMs;
       const mag = screenShake.intensity * decay;
@@ -946,28 +1286,14 @@
       ctx.translate(offsetX, offsetY);
     }
 
-    // Subtle geometric grid
     drawGrid();
-
-    // 2. Stage Platforms
     drawStagePlatforms();
-
-    // 3. Goal Zone on Right Edge
+    drawMovingPlatforms(now);
     drawGoalZone(now);
-
-    // 4. Bottom Spike Pit
     drawSpikePit();
-
-    // 5. Drawn Ink Lines (Smooth Curves with Fade-out)
     drawInkStrokes(now);
-
-    // 6. Expanding Vector Ripples
     drawRipples();
-
-    // 7. Player Ball & Motion Trail
     drawPlayerBall();
-
-    // 8. Vector Burst Particles
     drawParticles();
 
     ctx.restore();
@@ -1007,6 +1333,47 @@
     }
   }
 
+  function drawMovingPlatforms(now) {
+    if (movingPlatforms.length === 0) return;
+
+    ctx.save();
+    for (const m of movingPlatforms) {
+      // Draw subtle guide track line
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.07)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(m.baseX - m.ampX, m.baseY - m.ampY);
+      ctx.lineTo(m.baseX + m.ampX, m.baseY + m.ampY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      const verts = m.body.vertices;
+      ctx.fillStyle = m.isHazard ? 'rgba(255, 71, 105, 0.22)' : COLORS.platform;
+      ctx.strokeStyle = m.isHazard ? COLORS.spikeFill : COLORS.movingStroke;
+      ctx.lineWidth = 1.8;
+
+      ctx.beginPath();
+      ctx.moveTo(verts[0].x, verts[0].y);
+      for (let i = 1; i < verts.length; i++) {
+        ctx.lineTo(verts[i].x, verts[i].y);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Center indicator dot
+      const pulse = (Math.sin(now * 0.008) + 1) * 0.5;
+      ctx.fillStyle = m.isHazard ? COLORS.spikeFill : COLORS.movingStroke;
+      ctx.globalAlpha = 0.5 + pulse * 0.5;
+      ctx.beginPath();
+      ctx.arc(m.body.position.x, m.body.position.y, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+    ctx.restore();
+  }
+
   function drawGoalZone(now) {
     if (!goalZone) return;
     const pulse = (Math.sin(now * 0.005) + 1) * 0.5;
@@ -1019,18 +1386,15 @@
     ctx.lineWidth = 2;
     ctx.strokeRect(left, top, gw, gh);
 
-    // Inner pulsing vector frame
     const inset = 6 + pulse * 4;
     ctx.globalAlpha = 0.35 + pulse * 0.25;
     ctx.strokeRect(left + inset, top + inset, gw - inset * 2, gh - inset * 2);
 
-    // Center target crosshair
     ctx.globalAlpha = 0.25 + pulse * 0.25;
     ctx.beginPath();
     ctx.arc(x, y, 8 + pulse * 4, 0, Math.PI * 2);
     ctx.stroke();
 
-    // GOAL Label
     ctx.globalAlpha = 0.9;
     ctx.fillStyle = COLORS.goalAccent;
     ctx.font = '700 11px "Space Grotesk", sans-serif';
@@ -1059,9 +1423,6 @@
     ctx.restore();
   }
 
-  /**
-   * Draw Smooth Ink Curves with Individual Segment Lifetimes
-   */
   function drawInkStrokes(now) {
     ctx.save();
     ctx.lineCap = 'round';
@@ -1071,7 +1432,6 @@
       const pts = stroke.points;
       if (pts.length < 2) continue;
 
-      // Render smooth quadratic midpoint segments so curves look fluid and fade naturally per segment
       for (let i = 0; i < pts.length - 1; i++) {
         const p0 = pts[i === 0 ? 0 : i - 1];
         const p1 = pts[i];
@@ -1093,7 +1453,6 @@
         ctx.quadraticCurveTo(p1.x, p1.y, endX, endY);
         ctx.stroke();
 
-        // Crisp inner core line
         ctx.strokeStyle = COLORS.inkCore;
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -1123,7 +1482,6 @@
   function drawPlayerBall() {
     if (!playerBall) return;
 
-    // Draw subtle motion trail
     ctx.save();
     for (let i = 0; i < ballTrail.length; i++) {
       const t = ballTrail[i];
@@ -1144,13 +1502,11 @@
     ctx.translate(x, y);
     ctx.rotate(angle);
 
-    // Outer solid ball
     ctx.fillStyle = COLORS.ballFill;
     ctx.beginPath();
     ctx.arc(0, 0, r, 0, Math.PI * 2);
     ctx.fill();
 
-    // Inner geometric line & core to show rolling spin clearly
     ctx.strokeStyle = '#1a1c23';
     ctx.lineWidth = 2.5;
     ctx.beginPath();
@@ -1201,27 +1557,48 @@
   canvas.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
   canvas.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
 
+  // HUD & Result Action Buttons
   quickResetBtn.addEventListener('click', () => {
     SoundFX.playUiClick();
     initGame();
   });
 
-  retryBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
+  hudMenuBtn.addEventListener('click', () => {
     SoundFX.playUiClick();
-    initGame();
-  });
-  retryBtn.addEventListener('pointerdown', (e) => {
-    e.stopPropagation();
+    showMainMenu();
   });
 
-  // Settings Modal Controls
+  retryBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    initGame();
+    SoundFX.playUiClick();
+  });
+
+  nextStageBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (currentStageIndex < STAGES.length - 1) {
+      startStage(currentStageIndex + 1);
+      SoundFX.playUiClick();
+    }
+  });
+
+  overlayMenuBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    SoundFX.playUiClick();
+    showMainMenu();
+  });
+
+  // Settings Modal Controls (Accessible from both Main Menu and In-Game HUD)
   settingsBtn.addEventListener('click', () => {
     if (isSettingsOpen) {
       closeSettings();
     } else {
       openSettings();
     }
+  });
+
+  menuSettingsBtn.addEventListener('click', () => {
+    openSettings();
   });
 
   settingsCloseBtn.addEventListener('click', () => {
@@ -1236,7 +1613,7 @@
 
   soundToggleBtn.addEventListener('click', () => {
     settings.soundEnabled = !settings.soundEnabled;
-    localStorage.setItem('ink_parkour_sound', String(settings.soundEnabled));
+    safeSetItem('ink_parkour_sound', String(settings.soundEnabled));
     syncSettingsUI();
     if (settings.soundEnabled) {
       SoundFX.playUiClick();
@@ -1245,19 +1622,23 @@
 
   shakeToggleBtn.addEventListener('click', () => {
     settings.shakeEnabled = !settings.shakeEnabled;
-    localStorage.setItem('ink_parkour_shake', String(settings.shakeEnabled));
+    safeSetItem('ink_parkour_shake', String(settings.shakeEnabled));
     syncSettingsUI();
     SoundFX.playUiClick();
   });
 
   window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && isSettingsOpen) {
-      closeSettings();
+    if (e.key === 'Escape') {
+      if (isSettingsOpen) {
+        closeSettings();
+      } else if (gameState === 'PLAYING') {
+        showMainMenu();
+      }
       return;
     }
-    if ((e.key === 'r' || e.key === 'R') && !isSettingsOpen) {
-      SoundFX.playUiClick();
+    if ((e.key === 'r' || e.key === 'R') && !isSettingsOpen && gameState !== 'MENU') {
       initGame();
+      SoundFX.playUiClick();
     }
   });
 
@@ -1265,12 +1646,16 @@
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
-      initGame();
+      if (gameState === 'MENU') {
+        buildPreviewOrStage(false);
+      } else {
+        initGame();
+      }
     }, 150);
   });
 
-  // Boot Game
+  // Boot Game into Main Menu
   syncSettingsUI();
-  initGame();
+  showMainMenu();
   requestAnimationFrame(loop);
 })();
