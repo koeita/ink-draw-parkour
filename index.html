@@ -20,7 +20,7 @@
           <span class="brand-mark"></span>
           <div class="brand-text">
             <span class="brand-title">インク・パルクール</span>
-            <span id="hud-stage-label" class="hud-stage-label">ステージ 01 — 最初の橋</span>
+            <span id="hud-stage-label" class="hud-stage-label">STAGE 01 — 最初の誘導</span>
           </div>
         </div>
         <div class="ink-panel">
@@ -38,7 +38,7 @@
           <button id="settings-btn" class="ghost-btn" type="button">設定</button>
         </div>
       </div>
-      <p id="hud-hint" class="hud-hint">ドラッグやスワイプでインクの足場を描いてください — 線は3.5秒後に消滅します</p>
+      <p id="hud-hint" class="hud-hint">スワイプやドラッグで線を描き、落下するボールを下部のゴールへ誘導してください</p>
     </header>
 
     <!-- メインメニュー画面 -->
@@ -48,18 +48,18 @@
           <div class="menu-header-top">
             <div class="menu-kicker-row">
               <span class="brand-mark"></span>
-              <p class="modal-kicker">2D物理インクアクション</p>
+              <p class="modal-kicker">2D物理インク誘導アクション</p>
             </div>
             <button id="menu-settings-btn" class="ghost-btn" type="button">設定</button>
           </div>
           <h1 id="menu-title" class="menu-title">インク・ドロー・パルクール</h1>
-          <p class="menu-subtitle">マウスや指で描いた線がリアルタイムで足場になるパルクールゲーム。遊びたいステージを選択してください。</p>
+          <p class="menu-subtitle">上から落ちていくボールを、指やマウスで描いたインクの線でゴールへ導くパルクールゲーム。ステージを選択してください。</p>
         </div>
 
         <div class="stage-section">
           <div class="stage-section-header">
             <span class="stage-section-title">ステージ選択</span>
-            <span id="stage-progress-text" class="stage-progress-text">0 / 5 クリア済み</span>
+            <span id="stage-progress-text" class="stage-progress-text">0 / 5 ステージクリア</span>
           </div>
           <div id="stage-grid" class="stage-grid">
             <!-- main.js で動的に生成 -->
@@ -77,7 +77,7 @@
         <div class="modal-stats">
           <div class="stat-item">
             <span class="stat-label">クリアタイム</span>
-            <span id="stat-time" class="stat-value">0.00s</span>
+            <span id="stat-time" class="stat-value">0.00秒</span>
           </div>
           <div class="stat-item">
             <span class="stat-label">インク使用量</span>
@@ -110,7 +110,7 @@
           <div class="setting-row">
             <div class="setting-info">
               <span class="setting-name">画面の揺れ (振動演出)</span>
-              <span class="setting-desc">着地やジャンプ時のカメラ振動</span>
+              <span class="setting-desc">着地やバウンド時のカメラ振動</span>
             </div>
             <button id="shake-toggle-btn" class="toggle-btn active" type="button" aria-pressed="true">ON</button>
           </div>
